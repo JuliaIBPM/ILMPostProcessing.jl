@@ -1,7 +1,7 @@
 #using Compat.Test
 #using Compat
 
-using ImmersedLayers
+using ILMPostProcessing
 using Literate
 using Test
 ##using TestSetExtensions
@@ -35,8 +35,6 @@ docdir = "../docs/src/manual"
 litdir = "./literate"
 
 if GROUP == "All" || GROUP == "Auxiliary"
-  include("tools.jl")
-  include("surface_ops.jl")
 end
 
 if GROUP == "All" || GROUP == "Literate"
