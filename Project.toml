@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [deps]
 ImmersedLayers = "cdc13194-334e-4e1c-bc8d-fc3a28509c85"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]
 ImmersedLayers = "0.5"
