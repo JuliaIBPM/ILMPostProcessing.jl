@@ -2,7 +2,7 @@
 #using Compat
 
 using ILMPostProcessing
-using Literate
+# using Literate
 using Test
 ##using TestSetExtensions
 
@@ -35,6 +35,7 @@ docdir = "../docs/src/manual"
 litdir = "./literate"
 
 if GROUP == "All" || GROUP == "Auxiliary"
+  include("POD.jl")
 end
 
 # if GROUP == "All" || GROUP == "Literate"
