@@ -1,8 +1,10 @@
-struct PODModes{DT, PT}
+struct PODModes{DT}
+    Xmean::DT
     Xnorm::Vector{DT}
     phi::Vector{DT}
     a::Matrix{Float64}
-    fieldReconst::PT
+    # fieldReconst::PT
+    lambda::Vector{Float64}
 end
 
 function createSnapshotData(dataFunction::Function, sol, sys::ILMSystem; timestep::Integer=10)
@@ -34,6 +36,7 @@ function PODModes(X::Vector{T}; tolerance=0.99) where T
     a = [dot(Xk, phi_j) for Xk in Xnorm, phi_j in phi]
 
     # reconstructed flow field at last solved timestep, ensuring mean is added back
-    fieldReconst = mapreduce((aj, phi_j) -> aj .* phi_j, +, a[end,:], phi) + Xmean
-    return PODModes{typeof(Xnorm[1]),typeof(fieldReconst)}(Xnorm, phi, a, fieldReconst)
+    # fieldReconst = mapreduce((aj, phi_j) -> aj .* phi_j, +, a[end,:], phi) + Xmean
+    # return PODModes{typeof(Xnorm[1]),typeof(fieldReconst)}(Xnorm, phi, a, fieldReconst)
+    return PODModes{typeof(Xnorm[1])}(Xmean, Xnorm, phi, a, lambda)
 end
