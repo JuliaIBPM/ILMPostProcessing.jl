@@ -21,5 +21,5 @@ using LinearAlgebra
     # extract POD modes
     modes = PODModes(vsnap)
     # compare POD-reconstructed field with original vel field
-    @test norm(modes.fieldReconst-vsnap[end])/norm(vsnap[end]) < 0.005
+    @test norm(modes.fieldReconst-vsnap[end])/norm(vsnap[end]) < 1e-8
 end
