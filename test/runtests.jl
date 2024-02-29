@@ -2,7 +2,7 @@
 #using Compat
 
 using ILMPostProcessing
-# using Literate
+using Literate
 using Test
 ##using TestSetExtensions
 
