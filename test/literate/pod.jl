@@ -114,3 +114,8 @@ Now let's print the $r$th mode, and the history of the coefficient in the decomp
 The energy associated with this mode is
 =#
 modes.lambda[end]
+
+#md # ## POD functions
+#md # ```@docs
+#md # PODModes
+#md # ```
