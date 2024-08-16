@@ -47,5 +47,5 @@ function PODModes(X::Vector{T}; tolerance=0.99) where T
     # reconstructed flow field at last solved timestep, ensuring mean is added back
     # fieldReconst = mapreduce((aj, phi_j) -> aj .* phi_j, +, a[end,:], phi) + Xmean
     # return PODModes{typeof(Xnorm[1]),typeof(fieldReconst)}(Xnorm, phi, a, fieldReconst)
-    return PODModes{typeof(Xmean)}(Xmean, Xnorm, phi, a, lambda)
+    return PODModes{typeof(Xmean)}(Xmean, Xnorm, phi, a, lambda_trunc)
 end
