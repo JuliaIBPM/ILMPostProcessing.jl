@@ -13,6 +13,7 @@ ViscousFlow = "103da179-b3e4-57c1-99a4-586354eb2c5a"
 
 [compat]
 ImmersedLayers = "0.5"
+Statistics = "1"
 julia = "1.7"
 
 [extras]
