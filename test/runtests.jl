@@ -2,7 +2,7 @@
 #using Compat
 
 using ILMPostProcessing
-# using Literate
+using Literate
 using Test
 ##using TestSetExtensions
 
@@ -38,18 +38,18 @@ if GROUP == "All" || GROUP == "Auxiliary"
   include("POD.jl")
 end
 
-# if GROUP == "All" || GROUP == "Literate"
-#   for (root, dirs, files) in walkdir(litdir)
-#     for file in files
-#       #endswith(file,".jl") && startswith(file,"caches") && @testset "$file" begin include(joinpath(root,file)) end
-#       #endswith(file,".jl") && @testset "$file" begin include(joinpath(root,file)) end
-#       global file_str = "$file"
-#       global body = :(begin include(joinpath($root,$file)) end)
-#       #endswith(file,".jl") && startswith(file,"s") && @mysafetestset file_str body
-#       endswith(file,".jl") && @mysafetestset file_str body
-#     end
-#   end
-# end
+if GROUP == "All" || GROUP == "Literate"
+  for (root, dirs, files) in walkdir(litdir)
+    for file in files
+      #endswith(file,".jl") && startswith(file,"caches") && @testset "$file" begin include(joinpath(root,file)) end
+      #endswith(file,".jl") && @testset "$file" begin include(joinpath(root,file)) end
+      global file_str = "$file"
+      global body = :(begin include(joinpath($root,$file)) end)
+      #endswith(file,".jl") && startswith(file,"s") && @mysafetestset file_str body
+      endswith(file,".jl") && @mysafetestset file_str body
+    end
+  end
+end
 
 if GROUP == "Notebooks"
   for (root, dirs, files) in walkdir(litdir)
