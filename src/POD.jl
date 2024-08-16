@@ -1,9 +1,9 @@
-struct PODModes{DT}
+struct PODModes{DT,AT}
     Xmean::DT
     Xnorm::Vector{DT}
     phi::Vector{DT}
-    a::Matrix{Float64}
-    lambda::Vector{Float64}
+    a::Matrix{AT}
+    lambda::Vector{AT}
 end
 
 """
@@ -23,6 +23,7 @@ The output of `PODModes` is a structure with the following fields
 - `phi`: vector of POD modes. Each element is of type `T`
 - `a`: matrix of POD coefficients. Number of columns is same as number of entries in `phi`. Column `k` constitutes the time-varying coefficient for mode `k` in `phi`.
 - `lambda`: vector of modal energies, arranged in decreasing order, corresponding to the modes in `phi`
+- `psi`: matrix of 
 """
 function PODModes(X::Vector{T}; tolerance=0.99) where T
     Xmean = mean(X)
@@ -42,11 +43,9 @@ function PODModes(X::Vector{T}; tolerance=0.99) where T
 
     # calculate POD modes
     #phi = [mapreduce((Xi,psi_ij) -> Xi .* psi_ij/sqrt(lambda_i), +, X, psicol) for (psicol,lambda_i) in zip(eachcol(psi_trunc), lambda_trunc)] 
-    phi = _calculate_U(X,psi_trunc,sqrt.(lambda_trunc))
-    a = [dot(Xk, phi_j) for Xk in Xnorm, phi_j in phi]
+    phi = _calculate_U(X,psi_trunc,sqrt.(lambda_trunc)) # Φ = X*Ψ/sqrt(Λ)
+    #a = [dot(Xk, phi_j) for Xk in Xnorm, phi_j in phi] # Xᵀ*Φ = sqrt(Λ)*Ψ
+    a = psi_trunc*Diagonal(sqrt.(lambda_trunc)) # Xᵀ*Φ = sqrt(Λ)*Ψ
 
-    # reconstructed flow field at last solved timestep, ensuring mean is added back
-    # fieldReconst = mapreduce((aj, phi_j) -> aj .* phi_j, +, a[end,:], phi) + Xmean
-    # return PODModes{typeof(Xnorm[1]),typeof(fieldReconst)}(Xnorm, phi, a, fieldReconst)
-    return PODModes{typeof(Xmean)}(Xmean, Xnorm, phi, a, lambda_trunc)
+    return PODModes{typeof(Xmean),eltype(a)}(Xmean, Xnorm, phi, a, lambda_trunc)
 end
