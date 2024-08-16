@@ -1,4 +1,4 @@
-using Documenter, ViscousFlow
+using Documenter, ILMPostProcessing
 
 ENV["GKSwstype"] = "nul" # removes GKS warnings during plotting
 
@@ -9,16 +9,7 @@ makedocs(
     modules = [ILMPostProcessing],
     pages = [
         "Home" => "index.md",
-        "Manual" => ["manual/1.-Basic-viscous-flow.md",
-                     "manual/2.-Basic-flow-with-a-stationary-body.md",
-                     "manual/3.-Applying-pulse-forcing-to-a-flow.md",
-                     "manual/4.-Multiple-stationary-bodies.md",
-                     "manual/5.-Moving-reference-frame.md",
-                     "manual/6.-Viscous-flow-about-a-moving-body.md",
-                     "manual/7.-Variable-free-stream.md",
-                     "manual/8.-Lid-driven-cavity.md",
-                     "manual/9.-Exogenous-degrees-of-freedom.md",
-                     "manual/functions.md"
+        "Manual" => ["manual/pod.md"
                      ]
         #"Internals" => [ "internals/properties.md"]
     ],
