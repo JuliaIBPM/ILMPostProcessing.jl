@@ -41,7 +41,8 @@ function PODModes(X::Vector{T}; tolerance=0.99) where T
 
 
     # calculate POD modes
-    phi = [mapreduce((Xi,psi_ij) -> Xi .* psi_ij/sqrt(lambda_i), +, X, psicol) for (psicol,lambda_i) in zip(eachcol(psi_trunc), lambda_trunc)] 
+    #phi = [mapreduce((Xi,psi_ij) -> Xi .* psi_ij/sqrt(lambda_i), +, X, psicol) for (psicol,lambda_i) in zip(eachcol(psi_trunc), lambda_trunc)] 
+    phi = _calculate_U(X,psi_trunc,sqrt.(lambda_trunc))
     a = [dot(Xk, phi_j) for Xk in Xnorm, phi_j in phi]
 
     # reconstructed flow field at last solved timestep, ensuring mean is added back
