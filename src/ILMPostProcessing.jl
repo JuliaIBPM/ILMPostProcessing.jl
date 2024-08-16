@@ -3,7 +3,7 @@ module ILMPostProcessing
 using ImmersedLayers
 using LinearAlgebra
 using Statistics
-export create_snapshot_data, PODModes
+export PODModes
 
 
 
