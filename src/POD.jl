@@ -25,7 +25,7 @@ The output of `PODModes` is a structure with the following fields
 - `lambda`: vector of modal energies, arranged in decreasing order, corresponding to the modes in `phi`
 - `psi`: matrix of 
 """
-function PODModes(X::Vector{T}; tolerance=0.99) where T
+function PODModes(X::AbstractVector{T}; tolerance=0.99) where T
     Xmean = mean(X)
     Xnorm = map(col -> col - Xmean, X) # normalized by mean
 
@@ -41,7 +41,7 @@ function PODModes(X::Vector{T}; tolerance=0.99) where T
     psi_trunc = psi[:,1:r]
 
 
-    # calculate POD modes
+    # calculate POD modes. Note that Ψ = a/sqrt(Λ)
     #phi = [mapreduce((Xi,psi_ij) -> Xi .* psi_ij/sqrt(lambda_i), +, X, psicol) for (psicol,lambda_i) in zip(eachcol(psi_trunc), lambda_trunc)] 
     phi = _calculate_U(X,psi_trunc,sqrt.(lambda_trunc)) # Φ = X*Ψ/sqrt(Λ)
     #a = [dot(Xk, phi_j) for Xk in Xnorm, phi_j in phi] # Xᵀ*Φ = sqrt(Λ)*Ψ
