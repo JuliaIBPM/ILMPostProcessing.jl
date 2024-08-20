@@ -7,6 +7,7 @@ makedocs(
     doctest = true,
     clean = true,
     modules = [ILMPostProcessing],
+    checkdocs = :exports,
     pages = [
         "Home" => "index.md",
         "Manual" => ["manual/pod.md"
