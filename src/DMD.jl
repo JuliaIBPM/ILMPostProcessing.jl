@@ -1,6 +1,6 @@
 struct DMDModes{DT}
-    V::Vector{DT}
-    mu::Vector{ComplexF64}
+    modes::Vector{DT}
+    evals::Vector{ComplexF64}
 end
 
 function DMDModes(Xplus::Vector{T}; tolerance=0.99) where {T}
