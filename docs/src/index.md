@@ -6,7 +6,7 @@ The objective of this package is to supply a variety of post-processing tools fo
 solutions of PDEs carried out with the [ImmersedLayers.jl](https://github.com/JuliaIBPM/ImmersedLayers.jl) package, and the domain-specific subpackages, such as [ViscousFlow.jl](https://github.com/JuliaIBPM/ViscousFlow.jl). The post-processing tools[^1] currently available
 are
 * Proper orthogonal decomposition (POD)
-* Dynamic mode decomposition (DMD) -- soon
+* Dynamic mode decomposition (DMD)
 
 ## Installation
 
