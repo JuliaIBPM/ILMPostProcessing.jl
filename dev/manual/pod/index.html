@@ -34,71 +34,71 @@ integrator = init(u0, tspan, sys)
 step!(integrator, 10)</code></pre><h2 id="Assemble-snapshots-of-the-velocity-field-from-the-solution-data"><a class="docs-heading-anchor" href="#Assemble-snapshots-of-the-velocity-field-from-the-solution-data">Assemble snapshots of the velocity field from the solution data</a><a id="Assemble-snapshots-of-the-velocity-field-from-the-solution-data-1"></a><a class="docs-heading-anchor-permalink" href="#Assemble-snapshots-of-the-velocity-field-from-the-solution-data" title="Permalink"></a></h2><p>Here, we make use of the capability of the <code>velocity</code> function to generate an array of velocity fields at a range of times. We will save every 5th time step in this array.</p><pre><code class="language-julia hljs">sol = integrator.sol
 tpod = sol.t[2:5:end]
 X = velocity(sol, sys, tpod);</code></pre><h2 id="Perform-the-POD"><a class="docs-heading-anchor" href="#Perform-the-POD">Perform the POD</a><a id="Perform-the-POD-1"></a><a class="docs-heading-anchor-permalink" href="#Perform-the-POD" title="Permalink"></a></h2><p>The POD is simply performed with the <code>PODModes</code> function. This provides a structure containing the modes (<code>phi</code>), the expansion coefficients (<code>a</code>), and the modal energies (<code>lambda</code>). By default, <code>PODModes</code> retains 99% of the energy. This can be changed with the optional argument <code>tolerance</code>.</p><pre><code class="language-julia hljs">modes = pod(X);</code></pre><p>The <code>a</code> array is of size <span>$N_t \times r$</span>, where <span>$N_t$</span> is the number of time values, and <span>$r$</span> is the number of modes. The modes are ordered from highest energy to lowest energy.</p><pre><code class="language-julia hljs">modes.a</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">101×10 Matrix{Float64}:
-  0.138594    0.0139242  -0.0776005  …  -0.0250941    -0.0147272
-  0.137245    0.014011   -0.0766288     -0.017459     -0.00919033
-  0.135343    0.0142894  -0.0759511     -0.00907582   -0.00359255
-  0.133094    0.0150524  -0.0755705     -0.000885553   0.00142547
-  0.130677    0.0164831  -0.07531        0.00620487    0.00542319
-  0.128265    0.0186461  -0.074906   …   0.0115912     0.00819159
-  0.126022    0.0214897  -0.07406        0.015055      0.00968162
-  0.124082    0.0248607  -0.0724815      0.016691      0.00990825
-  0.122541    0.028528   -0.0699246      0.0167626     0.00890828
-  0.121453    0.0322118  -0.0662134      0.0155626     0.00676714
+  0.139686   0.0143285   -0.0783962  …  -0.0253506    -0.0149
+  0.138321   0.0144164   -0.0774116     -0.017643     -0.00929782
+  0.136397   0.0147017   -0.076721      -0.00917903   -0.0036329
+  0.134122   0.0154799   -0.0763261     -0.000908048   0.00144621
+  0.131676   0.0169349   -0.0760475      0.00625423    0.00549308
+  0.129237   0.0191302   -0.0756189  …   0.0116971     0.00829546
+  0.126969   0.0220118   -0.0747395      0.0151995     0.00980329
+  0.125007   0.0254227   -0.0731176      0.0168564     0.0100318
+  0.123451   0.0291277   -0.0705067      0.0169336     0.00901862
+  0.122354   0.0328427   -0.0667312      0.0157271     0.00685073
   ⋮                                  ⋱                
- -0.108904   -0.0358799  -0.0511001     -0.0117441     0.00820977
- -0.110949   -0.0238155  -0.0569759     -0.00885494    0.0094184
- -0.112089   -0.0108806  -0.0609607     -0.00490339    0.00932068
- -0.112287    0.0026775  -0.0629261  …  -0.000227296   0.00792628
- -0.111527    0.0166005  -0.0627862      0.00478454    0.0053892
- -0.109815    0.0306233  -0.0605024      0.00974103    0.00197606
- -0.107181    0.0444783  -0.0560871      0.0142939    -0.0019802
- -0.103674    0.0578991  -0.0496059      0.0181718    -0.00613262
- -0.0993676   0.0706231  -0.0411791  …   0.0211988    -0.0101684</code></pre><p>In this case, 7 modes were retained, at 51 times.</p><p>If we wanted to re-assemble the modes and coefficients to recover the flow at some time instant, we could use the <code>mapreduce</code> function, e.g.,</p><pre><code class="language-julia hljs">vel_assemble = mapreduce((aj, phi_j) -&gt; aj .* phi_j, +, modes.a[end,:], modes.phi) + modes.Xmean</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CartesianGrids.Edges{CartesianGrids.Primal, 154, 110, Float64, Vector{Float64}} data
+ -0.110008  -0.0354514   -0.0517763     -0.0118488     0.00831293
+ -0.112054  -0.0231942   -0.0575843     -0.00892491    0.0095227
+ -0.11318   -0.0100772   -0.0614741     -0.00492928    0.00941186
+ -0.113349   0.00364765  -0.0633182  …  -0.000203918   0.0079918
+ -0.112546   0.0177178   -0.0630329      0.00485783    0.00541969
+ -0.110778   0.0318641   -0.060582       0.0098606     0.00196624
+ -0.108073   0.0458155   -0.0559812      0.0144525    -0.00203136
+ -0.104484   0.0593026   -0.0493002      0.0183599    -0.0062224
+ -0.100086   0.0720604   -0.0406637  …   0.0214055    -0.0102913</code></pre><p>In this case, 7 modes were retained, at 51 times.</p><p>If we wanted to re-assemble the modes and coefficients to recover the flow at some time instant, we could use the <code>mapreduce</code> function, e.g.,</p><pre><code class="language-julia hljs">vel_assemble = mapreduce((aj, phi_j) -&gt; aj .* phi_j, +, modes.a[end,:], modes.phi) + modes.Xmean</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CartesianGrids.Edges{CartesianGrids.Primal, 154, 108, Float64, Vector{Float64}} data
 u (in grid orientation)
-109×154 Matrix{Float64}:
- 1.03332   1.03515   1.03691   1.03867   …  0.997279  0.995682  0.994475
- 1.03264   1.03446   1.03625   1.03804      0.996319  0.994786  0.993448
- 1.03187   1.03368   1.03549   1.03731      0.995267  0.993755  0.992356
- 1.03101   1.03283   1.03466   1.03649      0.994116  0.992598  0.991161
- 1.03008   1.03191   1.03375   1.0356       0.992858  0.991324  0.98986
- 1.02908   1.03092   1.03277   1.03463   …  0.99149   0.989939  0.988452
- 1.028     1.02985   1.03171   1.03359      0.990009  0.988443  0.98694
- 1.02684   1.0287    1.03057   1.03246      0.988415  0.986837  0.985322
- 1.0256    1.02746   1.02935   1.03125      0.986706  0.98512   0.983597
- 1.02427   1.02614   1.02803   1.02994      0.984881  0.98329   0.981764
+107×154 Matrix{Float64}:
+ 1.03292   1.03479   1.0366    1.03839   …  0.996312  0.994686  0.993467
+ 1.03219   1.03404   1.03588   1.03771      0.995314  0.993756  0.992399
+ 1.03135   1.0332    1.03505   1.0369       0.99422   0.992684  0.991264
+ 1.03043   1.03228   1.03414   1.03601      0.993022  0.99148   0.990021
+ 1.02943   1.03129   1.03316   1.03504      0.991711  0.990154  0.988666
+ 1.02835   1.03022   1.0321    1.034     …  0.990284  0.98871   0.9872
+ 1.0272    1.02907   1.03096   1.03287      0.988737  0.987149  0.985623
+ 1.02596   1.02784   1.02974   1.03165      0.987071  0.985471  0.983935
+ 1.02463   1.02652   1.02842   1.03035      0.985282  0.983676  0.982134
+ 1.02321   1.0251    1.02701   1.02894      0.983371  0.981762  0.980218
  ⋮                                       ⋱                      
- 0.955255  0.95554   0.955837  0.956148  …  1.03507   1.03329   1.03141
- 0.956937  0.957277  0.957628  0.95799      1.03432   1.03264   1.03085
- 0.958569  0.958963  0.959366  0.95978      1.03357   1.03198   1.03028
- 0.960149  0.960599  0.961055  0.961518     1.03283   1.03131   1.0297
- 0.96168   0.962186  0.962697  0.963208     1.03207   1.03065   1.02911
- 0.963158  0.963726  0.964291  0.96485   …  1.03132   1.02997   1.02851
- 0.964578  0.965216  0.965836  0.966435     1.03055   1.0293    1.0279
- 0.965924  0.966642  0.967307  0.967932     1.02977   1.02863   1.02729
- 0.967146  0.967958  0.968636  0.969263     1.02897   1.02797   1.02665
+ 0.953862  0.954112  0.954376  0.954653     1.03605   1.03415   1.03215
+ 0.955594  0.955903  0.956224  0.956557     1.03527   1.03348   1.03158
+ 0.957275  0.957642  0.95802   0.958407  …  1.03449   1.0328    1.03099
+ 0.958904  0.959331  0.959765  0.960205     1.03371   1.03211   1.0304
+ 0.960482  0.96097   0.961461  0.961954     1.03292   1.03141   1.02979
+ 0.962007  0.96256   0.96311   0.963653     1.03214   1.03071   1.02917
+ 0.963474  0.964099  0.964707  0.965294     1.03134   1.03001   1.02854
+ 0.964863  0.965573  0.96623   0.966844  …  1.03053   1.02932   1.02791
+ 0.966124  0.966934  0.967604  0.968223     1.02969   1.02864   1.02725
 v (in grid orientation)
-110×153 Matrix{Float64}:
-  0.0751228   0.0753511   0.0755181  …  -0.0829026  -0.0818438  -0.0804295
-  0.0769492   0.0771187   0.0772696     -0.0843371  -0.0834418  -0.0816361
-  0.0787632   0.0789166   0.0790578     -0.0858107  -0.0849743  -0.0829749
-  0.0805766   0.0807305   0.0808713     -0.0873156  -0.0864859  -0.0843742
-  0.0823952   0.0825568   0.0827039     -0.0888458  -0.088004   -0.0858108
-  0.0842221   0.0843951   0.0845529  …  -0.0903974  -0.0895378  -0.0872752
-  0.0860588   0.0862455   0.0864169     -0.0919679  -0.0910886  -0.0887617
-  0.0879054   0.0881076   0.0882951     -0.0935543  -0.0926544  -0.090265
-  0.0897615   0.0899805   0.0901861     -0.0951536  -0.0942323  -0.0917803
-  0.0916257   0.0918629   0.0920884     -0.0967626  -0.0958188  -0.0933029
+108×153 Matrix{Float64}:
+  0.0765331   0.0767843   0.0769725  …  -0.0840908  -0.0829875  -0.0815165
+  0.0784068   0.0785937   0.078764      -0.0855471  -0.0846133  -0.0827361
+  0.080263    0.0804322   0.0805916     -0.0870434  -0.0861709  -0.0840933
+  0.0821151   0.0822845   0.0824432     -0.0885717  -0.0877065  -0.0855134
+  0.0839693   0.0841467   0.0843119     -0.0901256  -0.0892482  -0.0869721
+  0.0858291   0.0860184   0.0861949  …  -0.0917009  -0.0908056  -0.0884593
+  0.0876958   0.0878996   0.0880906     -0.0932946  -0.0923796  -0.0899687
+  0.0895697   0.0897898   0.0899979     -0.0949036  -0.093968   -0.0914944
+  0.09145     0.091688    0.0919154     -0.0965244  -0.0955673  -0.0930311
+  0.0933353   0.0935926   0.0938412     -0.0981534  -0.0971736  -0.0945736
   ⋮                                  ⋱   ⋮                      
- -0.0359007  -0.0362998  -0.036758       0.030995    0.0322584   0.0345964
- -0.0355611  -0.0359491  -0.0363954      0.0293779   0.0305744   0.0328086
- -0.0351671  -0.0355455  -0.0359822      0.0278486   0.0289795   0.0311086
- -0.034718   -0.0350888  -0.0355192      0.0264017   0.0274687   0.0294908
- -0.0342115  -0.0345783  -0.0350074  …   0.0250335   0.0260392   0.0279509
- -0.0336433  -0.0340127  -0.034449       0.0237416   0.0246915   0.0264854
- -0.0330059  -0.0333927  -0.0338498      0.0225238   0.023433    0.0250901
- -0.0322881  -0.0327271  -0.0332252      0.0213759   0.0222861   0.0237529
- -0.0314761  -0.0320492  -0.0325982      0.0202905   0.0212901   0.0224327</code></pre><p>In this last line, <code>modes.a[end,:]</code> obtains the expansion coefficients at the last time available.</p><p>Let&#39;s print the first mode, and the corresponding history of the modal coefficient in the decomposition</p><pre><code class="language-julia hljs">plot(layout=[2;1],plot(modes.phi[1].u,sys,title=&quot;u&quot;),
+ -0.0357093  -0.036123   -0.0365999      0.0321599   0.0334751   0.0358842
+ -0.0353999  -0.0358023  -0.0362668  …   0.0304375   0.0316834   0.0339867
+ -0.0350324  -0.0354248  -0.0358795      0.0288118   0.0299898   0.0321862
+ -0.0346061  -0.0349908  -0.0354389      0.0272768   0.0283885   0.030476
+ -0.0341188  -0.0344994  -0.0349461      0.025828    0.0268761   0.0288511
+ -0.033566   -0.0339494  -0.0344034      0.0244622   0.0254525   0.0273073
+ -0.0329402  -0.0333416  -0.0338171  …   0.0231768   0.0241248   0.0258395
+ -0.0322298  -0.0326851  -0.0332028      0.021967    0.0229156   0.0244345
+ -0.0314205  -0.0320144  -0.0325847      0.0208247   0.021865    0.0230492</code></pre><p>In this last line, <code>modes.a[end,:]</code> obtains the expansion coefficients at the last time available.</p><p>Let&#39;s print the first mode, and the corresponding history of the modal coefficient in the decomposition</p><pre><code class="language-julia hljs">plot(layout=[2;1],plot(modes.phi[1].u,sys,title=&quot;u&quot;),
    plot(modes.phi[1].v,sys,title=&quot;v&quot;),
-   plot(tpod,modes.a[:,1],xlim=(0,Inf),xlabel=&quot;\$t\$&quot;,ylabel=&quot;\$a_1(t)\$&quot;))</code></pre><img src="037aff6b.svg" alt="Example block output"/><p>The energy associated with this mode is</p><pre><code class="language-julia hljs">modes.lambda[1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.7167096736108148</code></pre><p>Now let&#39;s print the <span>$r$</span>th mode, and the history of the coefficient in the decomposition</p><pre><code class="language-julia hljs">plot(layout=[2;1],plot(modes.phi[end].u,sys,title=&quot;u&quot;),
+   plot(tpod,modes.a[:,1],xlim=(0,Inf),xlabel=&quot;\$t\$&quot;,ylabel=&quot;\$a_1(t)\$&quot;))</code></pre><img src="a73dbda6.svg" alt="Example block output"/><p>The energy associated with this mode is</p><pre><code class="language-julia hljs">modes.lambda[1]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.7285599424152466</code></pre><p>Now let&#39;s print the <span>$r$</span>th mode, and the history of the coefficient in the decomposition</p><pre><code class="language-julia hljs">plot(layout=[2;1],plot(modes.phi[end].u,sys,title=&quot;u&quot;),
    plot(modes.phi[end].v,sys,title=&quot;v&quot;),
-   plot(tpod,modes.a[:,end],xlim=(0,Inf),xlabel=&quot;\$t\$&quot;,ylabel=&quot;\$a_r(t)\$&quot;))</code></pre><img src="bbc0a714.svg" alt="Example block output"/><p>The energy associated with this mode is</p><pre><code class="language-julia hljs">modes.lambda[end]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.006551327312829725</code></pre><h2 id="POD-functions"><a class="docs-heading-anchor" href="#POD-functions">POD functions</a><a id="POD-functions-1"></a><a class="docs-heading-anchor-permalink" href="#POD-functions" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="ILMPostProcessing.pod" href="#ILMPostProcessing.pod"><code>ILMPostProcessing.pod</code></a> — <span class="docstring-category">Function</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">pod(X::Vector{T}[; tolerance=0.99])</code></pre><p>Calculate the POD modes and associated time-varying coefficients from an array of snapshot data <code>X</code>. This <code>X</code> plays the role of a snapshot matrix, whose columns are snapshots of the data. However, it is actually to be stored as a type <code>Vector{T}</code> where <code>T&lt;:GridData</code>. It can be generated with a function like <code>velocity(sol,sys,trange)</code>, where <code>sol</code> is a <code>ODESolution</code>, <code>sys</code> is an <code>ILMSystem</code>, and <code>trange</code> is an array of times, e.g., <code>trange=range(1,10,length=100)</code>. The number of POD modes retained in the decomposition is set by <code>tolerance</code>: this specifies the fraction of the total energy to keep, and defaults to 99 percent. </p><p>The output of <code>PODModes</code> is a structure with the following fields</p><ul><li><code>Xmean</code>: temporal mean of the data. type <code>T</code></li><li><code>Xnorm</code>: original <code>X</code> vector with mean removed. Each element is of type <code>T</code></li><li><code>phi</code>: vector of POD modes. Each element is of type <code>T</code></li><li><code>a</code>: matrix of POD coefficients. Number of columns is same as number of entries in <code>phi</code>. Column <code>k</code> constitutes the time-varying coefficient for mode <code>k</code> in <code>phi</code>.</li><li><code>lambda</code>: vector of modal energies, arranged in decreasing order, corresponding to the modes in <code>phi</code></li><li><code>psi</code>: matrix of </li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaIBPM/ILMPostProcessing.jl/blob/109e3e083b7bcc6d5d17eb2bd06ce1d14b30ade9/src/POD.jl#L9-L27">source</a></section><section><div><pre><code class="language-julia hljs">pod(X::Vector{T},r::Int)</code></pre><p>Perform POD on snapshot data <code>X</code> and truncate to <code>r</code> modes</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaIBPM/ILMPostProcessing.jl/blob/109e3e083b7bcc6d5d17eb2bd06ce1d14b30ade9/src/POD.jl#L42-L46">source</a></section></article><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../dmdtest/">Dynamic mode decomposition (DMD) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.6.0 on <span class="colophon-date" title="Friday 23 August 2024 01:13">Friday 23 August 2024</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+   plot(tpod,modes.a[:,end],xlim=(0,Inf),xlabel=&quot;\$t\$&quot;,ylabel=&quot;\$a_r(t)\$&quot;))</code></pre><img src="a9427064.svg" alt="Example block output"/><p>The energy associated with this mode is</p><pre><code class="language-julia hljs">modes.lambda[end]</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.0066731121640381166</code></pre><h2 id="POD-functions"><a class="docs-heading-anchor" href="#POD-functions">POD functions</a><a id="POD-functions-1"></a><a class="docs-heading-anchor-permalink" href="#POD-functions" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="ILMPostProcessing.pod" href="#ILMPostProcessing.pod"><code>ILMPostProcessing.pod</code></a> — <span class="docstring-category">Function</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">pod(X::Vector{T}[; tolerance=0.99])</code></pre><p>Calculate the POD modes and associated time-varying coefficients from an array of snapshot data <code>X</code>. This <code>X</code> plays the role of a snapshot matrix, whose columns are snapshots of the data. However, it is actually to be stored as a type <code>Vector{T}</code> where <code>T&lt;:GridData</code>. It can be generated with a function like <code>velocity(sol,sys,trange)</code>, where <code>sol</code> is a <code>ODESolution</code>, <code>sys</code> is an <code>ILMSystem</code>, and <code>trange</code> is an array of times, e.g., <code>trange=range(1,10,length=100)</code>. The number of POD modes retained in the decomposition is set by <code>tolerance</code>: this specifies the fraction of the total energy to keep, and defaults to 99 percent. </p><p>The output of <code>PODModes</code> is a structure with the following fields</p><ul><li><code>Xmean</code>: temporal mean of the data. type <code>T</code></li><li><code>Xnorm</code>: original <code>X</code> vector with mean removed. Each element is of type <code>T</code></li><li><code>phi</code>: vector of POD modes. Each element is of type <code>T</code></li><li><code>a</code>: matrix of POD coefficients. Number of columns is same as number of entries in <code>phi</code>. Column <code>k</code> constitutes the time-varying coefficient for mode <code>k</code> in <code>phi</code>.</li><li><code>lambda</code>: vector of modal energies, arranged in decreasing order, corresponding to the modes in <code>phi</code></li><li><code>psi</code>: matrix of </li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaIBPM/ILMPostProcessing.jl/blob/3f76aec13c69d9965adbf016f9ee677b488b5a9e/src/POD.jl#L9-L27">source</a></section><section><div><pre><code class="language-julia hljs">pod(X::Vector{T},r::Int)</code></pre><p>Perform POD on snapshot data <code>X</code> and truncate to <code>r</code> modes</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaIBPM/ILMPostProcessing.jl/blob/3f76aec13c69d9965adbf016f9ee677b488b5a9e/src/POD.jl#L42-L46">source</a></section></article><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../dmdtest/">Dynamic mode decomposition (DMD) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.6.0 on <span class="colophon-date" title="Friday 23 August 2024 01:22">Friday 23 August 2024</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
