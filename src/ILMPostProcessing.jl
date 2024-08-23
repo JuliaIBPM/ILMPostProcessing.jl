@@ -4,7 +4,7 @@ using ImmersedLayers
 using LinearAlgebra
 using Statistics
 
-export PODModes, DMDModes 
+export pod, dmd, PODModes, DMDModes 
 
 include("utilities.jl")
 include("POD.jl")

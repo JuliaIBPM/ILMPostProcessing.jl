@@ -74,7 +74,7 @@ energies (`lambda`). By default, `PODModes` retains 99% of the energy. This can 
 with the optional argument `tolerance`.
 
 ````@example pod
-modes = PODModes(X);
+modes = pod(X);
 nothing #hide
 ````
 

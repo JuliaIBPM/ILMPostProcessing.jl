@@ -7,7 +7,7 @@ struct PODModes{DT,AT}
 end
 
 """
-    PODModes(X::Vector{T}[; tolerance=0.99])
+    pod(X::Vector{T}[; tolerance=0.99])
 
 Calculate the POD modes and associated time-varying coefficients from an array
 of snapshot data `X`. This `X` plays the role of a snapshot matrix, whose columns are
@@ -25,15 +25,11 @@ The output of `PODModes` is a structure with the following fields
 - `lambda`: vector of modal energies, arranged in decreasing order, corresponding to the modes in `phi`
 - `psi`: matrix of 
 """
-function PODModes(X::AbstractVector{T}; tolerance=0.99) where T
+function pod(X::AbstractVector{T}; tolerance=0.99) where T
     
-    Xmean, Xnorm = _pod_preliminaries(X)
-
+    Xmean, Xnorm = _split_data_mean_plus_fluctuation(X)
     lambda, psi = _eigen_correlation_matrix(Xnorm)
-
-    # filter out eigenvalues based on energy tolerance
-    lambda_cumsum = cumsum(lambda)
-    r = findfirst(lambda_cumsum .>= tolerance*lambda_cumsum[end])
+    r = _truncate_spectrum_by_tolerance(lambda, tolerance)
 
     # perform truncation of modes
     lambda_trunc = lambda[1:r]
@@ -50,8 +46,7 @@ Perform POD on snapshot data `X` and truncate to `r` modes
 """
 function PODModes(X::AbstractVector{T},r::Int) where T
 
-    Xmean, Xnorm = _pod_preliminaries(X)
-
+    Xmean, Xnorm = _split_data_mean_plus_fluctuation(X)
     lambda, psi = _eigen_correlation_matrix(Xnorm)
 
     # perform truncation of modes
@@ -62,7 +57,10 @@ function PODModes(X::AbstractVector{T},r::Int) where T
 
 end
 
-function _pod_preliminaries(X)
+#####  Utilities ######
+
+# Split the data matrix into mean plus the fluctuating part
+function _split_data_mean_plus_fluctuation(X)
 
     Xmean = mean(X)
     Xnorm = map(col -> col - Xmean, X) # mean removed
@@ -70,19 +68,9 @@ function _pod_preliminaries(X)
     return Xmean, Xnorm
 end
 
-function _eigen_correlation_matrix(Xnorm)
-
-    # calculate X transpose * X matrix and find its eigenvectors/values
-    XTX = [dot(xi,xj) for xi in Xnorm, xj in Xnorm]
-    lambda, psi = eigen(XTX,sortby=-) # sorts from largest to smallest
-    
-end
-
-
 function _podmodes(Xmean,Xnorm,lambda_trunc,psi_trunc)
 
     # calculate POD modes. Note that Ψ = a/sqrt(Λ)
-    #phi = [mapreduce((Xi,psi_ij) -> Xi .* psi_ij/sqrt(lambda_i), +, X, psicol) for (psicol,lambda_i) in zip(eachcol(psi_trunc), lambda_trunc)] 
     phi = _calculate_U(Xnorm,psi_trunc,sqrt.(lambda_trunc)) # Φ = X*Ψ/sqrt(Λ)
     #a = [dot(Xk, phi_j) for Xk in Xnorm, phi_j in phi] # Xᵀ*Φ = sqrt(Λ)*Ψ
     a = psi_trunc*Diagonal(sqrt.(lambda_trunc)) # Xᵀ*Φ = sqrt(Λ)*Ψ
@@ -90,3 +78,42 @@ function _podmodes(Xmean,Xnorm,lambda_trunc,psi_trunc)
     return PODModes{typeof(Xmean),eltype(a)}(Xmean, Xnorm, phi, a, lambda_trunc)
 
 end
+
+
+# calculate X^*.X matrix and find its eigenvectors/values
+function _eigen_correlation_matrix(X)
+
+    XTX = _calculate_XTY_via_dot(X,X)
+    lambda, psi = _eigen_sorted(XTX)
+    
+end
+
+
+# calculate X^*.X + Y^*.Y matrix and find its eigenvectors/values
+function _eigen_correlation_matrix(X,Y)
+    
+    ZTZ = _calculate_XTY_via_dot(X,X) .+ _calculate_XTY_via_dot(Y,Y)
+    lambda, psi = _eigen_sorted(ZTZ)
+    
+end
+
+# Compute the correlation matrix X^*.Y
+function _calculate_XTY_via_dot(X,Y)
+    return [dot(xi,yj) for xi in X, yj in Y]
+end
+
+# Compute the eigenvalues/vectors, sorting from largest to smallest
+_eigen_sorted(A) = eigen(A,sortby=-)
+
+# filter out eigenvalues based on energy tolerance
+function _truncate_spectrum_by_tolerance(lambda,tolerance)
+    lambda_cumsum = cumsum(lambda)
+    r = findfirst(lambda_cumsum .>= tolerance*lambda_cumsum[end])
+    return r
+end
+
+
+# Calculate U = XVΣ^(-1), ensuring that the columns of U have the same
+# data type as the columns of X
+_calculate_U(X::AbstractVector{T},V::Array,Σ::Vector) where {T} = 
+        [mapreduce((Xi,V_ij) -> Xi .* V_ij/σ_i, +, X, Vcol) for (Vcol,σ_i) in zip(eachcol(V), Σ)]
