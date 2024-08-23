@@ -1,5 +1,5 @@
 using ILMPostProcessing
-using ViscousFlow
+using ImmersedLayers
 using LinearAlgebra
 
 @testset "POD" begin
