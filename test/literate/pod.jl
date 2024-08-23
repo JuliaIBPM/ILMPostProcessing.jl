@@ -117,5 +117,5 @@ modes.lambda[end]
 
 #md # ## POD functions
 #md # ```@docs
-#md # PODModes
+#md # pod
 #md # ```
