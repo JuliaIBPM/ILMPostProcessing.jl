@@ -103,3 +103,8 @@ vals, idex = findmin(abs2.(true_evals .- transpose(dmdmodes.evals)),dims=2)
 err = sqrt(sum(vals))
 
 #jl @test err < 0.05
+
+#md # ## DMD functions
+#md # ```@docs
+#md # dmd
+#md # ```

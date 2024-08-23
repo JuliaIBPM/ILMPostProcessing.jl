@@ -127,7 +127,7 @@ modes.lambda[end]
 
 ## POD functions
 ```@docs
-PODModes
+pod
 ```
 
 ---
