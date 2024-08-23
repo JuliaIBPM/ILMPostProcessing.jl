@@ -1,7 +1,7 @@
 name = "ILMPostProcessing"
 uuid = "3d549a52-7b57-4935-b05e-d5b0ee0c7825"
 authors = ["Jeff Eldredge <jdeldre@g.ucla.edu>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 ImmersedLayers = "cdc13194-334e-4e1c-bc8d-fc3a28509c85"
