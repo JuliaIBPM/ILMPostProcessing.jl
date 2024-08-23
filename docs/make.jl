@@ -10,7 +10,8 @@ makedocs(
     checkdocs = :exports,
     pages = [
         "Home" => "index.md",
-        "Manual" => ["manual/pod.md"
+        "Manual" => ["manual/pod.md",
+                     "manual/dmdtest.md"
                      ]
         #"Internals" => [ "internals/properties.md"]
     ],
