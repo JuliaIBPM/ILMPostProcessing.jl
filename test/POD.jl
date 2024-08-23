@@ -1,5 +1,5 @@
 using ILMPostProcessing
-using ViscousFlow
+using ImmersedLayers
 using LinearAlgebra
 
 @testset "POD" begin
@@ -19,7 +19,7 @@ using LinearAlgebra
     end
 
     # extract POD modes
-    modes = PODModes(vsnap)
+    modes = pod(vsnap)
     fieldReconst = mapreduce((aj, phi_j) -> aj .* phi_j, +, modes.a[end,:], modes.phi) + modes.Xmean
     # compare POD-reconstructed field with original vel field
     @test norm(fieldReconst-vsnap[end])/norm(vsnap[end]) < 1e-8

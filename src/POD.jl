@@ -1,13 +1,13 @@
-struct PODModes{DT}
+struct PODModes{DT,AT}
     Xmean::DT
     Xnorm::Vector{DT}
     phi::Vector{DT}
-    a::Matrix{Float64}
-    lambda::Vector{Float64}
+    a::Matrix{AT}
+    lambda::Vector{AT}
 end
 
 """
-    PODModes(X::Vector{T}[; tolerance=0.99])
+    pod(X::Vector{T}[; tolerance=0.99])
 
 Calculate the POD modes and associated time-varying coefficients from an array
 of snapshot data `X`. This `X` plays the role of a snapshot matrix, whose columns are
@@ -23,29 +23,97 @@ The output of `PODModes` is a structure with the following fields
 - `phi`: vector of POD modes. Each element is of type `T`
 - `a`: matrix of POD coefficients. Number of columns is same as number of entries in `phi`. Column `k` constitutes the time-varying coefficient for mode `k` in `phi`.
 - `lambda`: vector of modal energies, arranged in decreasing order, corresponding to the modes in `phi`
+- `psi`: matrix of 
 """
-function PODModes(X::Vector{T}; tolerance=0.99) where T
-    Xmean = mean(X)
-    Xnorm = map(col -> col - Xmean, X) # normalized by mean
+function pod(X::AbstractVector{T}; tolerance=0.99) where T
+    
+    Xmean, Xnorm = _split_data_mean_plus_fluctuation(X)
+    lambda, psi = _eigen_correlation_matrix(Xnorm)
+    r = _truncate_spectrum_by_tolerance(lambda, tolerance)
 
-    # calculate X transpose * X matrix and find its eigenvectors/values
-    XTX = [dot(xi,xj) for xi in Xnorm, xj in Xnorm]
-    lambda, psi = eigen(XTX,sortby=-) # sorts from largest to smallest
-
-    # filter out eigenvalues based on energy tolerance
-    lambda_cumsum = cumsum(lambda)
-    r = findfirst(lambda_cumsum .>= tolerance*lambda_cumsum[end])
     # perform truncation of modes
     lambda_trunc = lambda[1:r]
     psi_trunc = psi[:,1:r]
 
+    _podmodes(Xmean,Xnorm,lambda_trunc,psi_trunc)
 
-    # calculate POD modes
-    phi = [mapreduce((Xi,psi_ij) -> Xi .* psi_ij/sqrt(lambda_i), +, X, psicol) for (psicol,lambda_i) in zip(eachcol(psi_trunc), lambda_trunc)] 
-    a = [dot(Xk, phi_j) for Xk in Xnorm, phi_j in phi]
-
-    # reconstructed flow field at last solved timestep, ensuring mean is added back
-    # fieldReconst = mapreduce((aj, phi_j) -> aj .* phi_j, +, a[end,:], phi) + Xmean
-    # return PODModes{typeof(Xnorm[1]),typeof(fieldReconst)}(Xnorm, phi, a, fieldReconst)
-    return PODModes{typeof(Xmean)}(Xmean, Xnorm, phi, a, lambda_trunc)
 end
+
+"""
+    pod(X::Vector{T},r::Int)
+
+Perform POD on snapshot data `X` and truncate to `r` modes
+"""
+function pod(X::AbstractVector{T},r::Int) where T
+
+    Xmean, Xnorm = _split_data_mean_plus_fluctuation(X)
+    lambda, psi = _eigen_correlation_matrix(Xnorm)
+
+    # perform truncation of modes
+    lambda_trunc = lambda[1:r]
+    psi_trunc = psi[:,1:r]
+
+    _podmodes(Xmean,Xnorm,lambda_trunc,psi_trunc)
+
+end
+
+#####  Utilities ######
+
+# Split the data matrix into mean plus the fluctuating part
+function _split_data_mean_plus_fluctuation(X)
+
+    Xmean = mean(X)
+    Xnorm = map(col -> col - Xmean, X) # mean removed
+
+    return Xmean, Xnorm
+end
+
+function _podmodes(Xmean,Xnorm,lambda_trunc,psi_trunc)
+
+    # calculate POD modes. Note that Ψ = a/sqrt(Λ)
+    phi = _calculate_U(Xnorm,psi_trunc,sqrt.(lambda_trunc)) # Φ = X*Ψ/sqrt(Λ)
+    #a = [dot(Xk, phi_j) for Xk in Xnorm, phi_j in phi] # Xᵀ*Φ = sqrt(Λ)*Ψ
+    a = psi_trunc*Diagonal(sqrt.(lambda_trunc)) # Xᵀ*Φ = sqrt(Λ)*Ψ
+
+    return PODModes{typeof(Xmean),eltype(a)}(Xmean, Xnorm, phi, a, lambda_trunc)
+
+end
+
+
+# calculate X^*.X matrix and find its eigenvectors/values
+function _eigen_correlation_matrix(X)
+
+    XTX = _calculate_XTY_via_dot(X,X)
+    lambda, psi = _eigen_sorted(XTX)
+    
+end
+
+
+# calculate X^*.X + Y^*.Y matrix and find its eigenvectors/values
+function _eigen_correlation_matrix(X,Y)
+    
+    ZTZ = _calculate_XTY_via_dot(X,X) .+ _calculate_XTY_via_dot(Y,Y)
+    lambda, psi = _eigen_sorted(ZTZ)
+    
+end
+
+# Compute the correlation matrix X^*.Y
+function _calculate_XTY_via_dot(X,Y)
+    return [dot(xi,yj) for xi in X, yj in Y]
+end
+
+# Compute the eigenvalues/vectors, sorting from largest to smallest
+_eigen_sorted(A) = eigen(A,sortby=-)
+
+# filter out eigenvalues based on energy tolerance
+function _truncate_spectrum_by_tolerance(lambda,tolerance)
+    lambda_cumsum = cumsum(lambda)
+    r = findfirst(lambda_cumsum .>= tolerance*lambda_cumsum[end])
+    return r
+end
+
+
+# Calculate U = XVΣ^(-1), ensuring that the columns of U have the same
+# data type as the columns of X
+_calculate_U(X::AbstractVector{T},V::Array,Σ::Vector) where {T} = 
+        [mapreduce((Xi,V_ij) -> Xi .* V_ij/σ_i, +, X, Vcol) for (Vcol,σ_i) in zip(eachcol(V), Σ)]

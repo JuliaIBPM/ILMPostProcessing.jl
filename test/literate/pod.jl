@@ -68,7 +68,7 @@ a structure containing the modes (`phi`), the expansion coefficients (`a`), and 
 energies (`lambda`). By default, `PODModes` retains 99% of the energy. This can be changed
 with the optional argument `tolerance`.
 =#
-modes = PODModes(X);
+modes = pod(X);
 
 #=
  The `a` array is of size $N_t \times r$, where $N_t$ is the number of time values,
@@ -117,5 +117,5 @@ modes.lambda[end]
 
 #md # ## POD functions
 #md # ```@docs
-#md # PODModes
+#md # pod
 #md # ```
