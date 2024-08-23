@@ -40,11 +40,11 @@ function pod(X::AbstractVector{T}; tolerance=0.99) where T
 end
 
 """
-    PODModes(X::Vector{T},r::Int)
+    pod(X::Vector{T},r::Int)
 
 Perform POD on snapshot data `X` and truncate to `r` modes
 """
-function PODModes(X::AbstractVector{T},r::Int) where T
+function pod(X::AbstractVector{T},r::Int) where T
 
     Xmean, Xnorm = _split_data_mean_plus_fluctuation(X)
     lambda, psi = _eigen_correlation_matrix(Xnorm)
