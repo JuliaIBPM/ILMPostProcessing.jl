@@ -41,7 +41,12 @@ function euler_backward(initial_conditions, u, v, t0, t_start, dt, T)
 
 end
 
-function compute_FTLE(FTLE, nx, ny, T, final_x, final_y, dx, dy)
+function compute_FTLE(FTLE, nx, ny, T, final_positions, dx, dy)
+
+    # Reshape the 2D array into the original 3D matrix format (nx, ny, 2)
+    final_matrix = reshape(final_positions, ny, nx, 2)
+    final_x = final_matrix[:,:,1];
+    final_y = final_matrix[:,:,2];
     
     # Shifted arrays for vector operations
     final_x_i_minus = final_x[2:end-1, 1:end-2]
