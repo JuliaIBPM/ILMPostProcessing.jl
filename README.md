@@ -9,5 +9,6 @@ _Tools for post-processing solutions of immersed layer PDEs_
 This package contains tools that can be used to post-process and analyze the solutions of partial differential equations computed with the [ImmersedLayers.jl](https://github.com/JuliaIBPM/ImmersedLayers.jl) package. Currently implemented methods are
 * proper orthogonal decomposition (POD)
 * dynamic mode decomposition (DMD)
+* finite time lyapunov exponent (FTLE)
 
 The examples in the documentation, which have companion notebooks in the `examples` folder, are the best way to get started.   
