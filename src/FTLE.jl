@@ -41,7 +41,7 @@ function euler_backward(initial_conditions, u, v, t0, t_start, dt, T)
 
 end
 
-function compute_FTLE(FTLE, nx, ny, T, final_x, final_y)
+function compute_FTLE(FTLE, nx, ny, T, final_x, final_y, dx, dy)
     
     # Shifted arrays for vector operations
     final_x_i_minus = final_x[2:end-1, 1:end-2]
