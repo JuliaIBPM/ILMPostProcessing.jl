@@ -41,6 +41,70 @@ function euler_backward(initial_conditions, u, v, t0, t_start, dt, T)
 
 end
 
+function adams_bashforth_2_forward(initial_conditions, u, v, t0, t_start, dt, T)
+    # t0 is the initial time 
+    # t_start is where the starting time of the solution from viscous flow
+    # dt is the interval between consecutive u and v fields
+    # T is the integration time
+    
+    start_idx = Int(round((t0 - t_start) / dt + 1))
+    iters = Int(round(T / dt - 1))
+
+    # first generate the 2nd initial condition w2 by using forward euler once 
+    w1 = initial_conditions
+    x1 = w1[:, 1]
+    y1 = w1[:, 2]
+    w2 = w1 - dt * [u[start_idx].(x1, y1) v[start_idx].(x1, y1)]
+
+    x2 = w2[:, 1]
+    y2 = w2[:, 2]
+
+    w3 = initial_conditions
+
+    for i = 1:iters
+        w3 = w2 + dt * (3/2*[u[start_idx+i].(x2, y2) v[start_idx+i].(x2, y2)] - 1/2*[u[start_idx+i-1].(x1, y1) v[start_idx+i-1].(x1, y1)])
+        x1 = x2 
+        y1 = y2
+        x2 = w3[:,1]
+        y2 = w3[:,2]
+        w2 = w3
+    end
+    
+    return w3
+end
+
+function adams_bashforth_2_backward(initial_conditions, u, v, t0, t_start, dt, T)
+    # t0 is the initial time 
+    # t_start is where the starting time of the solution from viscous flow
+    # dt is the interval between consecutive u and v fields
+    # T is the integration time
+    
+    start_idx = Int(round((t0 - t_start) / dt + 1))
+    iters = Int(round(T / dt - 1))
+
+    # first generate the 2nd initial condition w2 by using forward euler once 
+    w1 = initial_conditions
+    x1 = w1[:, 1]
+    y1 = w1[:, 2]
+    w2 = w1 + dt * [u[start_idx].(x1, y1) v[start_idx].(x1, y1)]
+
+    x2 = w2[:, 1]
+    y2 = w2[:, 2]
+
+    w3 = initial_conditions
+
+    for i = -1:-1:-iters
+        w3 = w2 - dt * (3/2*[u[start_idx+i].(x2, y2) v[start_idx+i].(x2, y2)] - 1/2*[u[start_idx+i+1].(x1, y1) v[start_idx+i+1].(x1, y1)])
+        x1 = x2 
+        y1 = y2
+        x2 = w3[:,1]
+        y2 = w3[:,2]
+        w2 = w3
+    end
+    
+    return w3
+end
+
 function compute_FTLE(FTLE, nx, ny, T, final_positions, dx, dy)
 
     # Reshape the 2D array into the original 3D matrix format (nx, ny, 2)
