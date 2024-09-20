@@ -1,3 +1,34 @@
+# this function could be included in ViscousFlow.jl
+
+function make_interp_fields!(u, v, t_start, t_end, dt, velocity_fn, sol, sys, grid)
+    time = t_start:dt:t_end
+
+    for t in time
+        # Call the passed velocity function
+        vel = velocity_fn(sol, sys, t)
+        
+        # Assuming vel contains u and v components
+        push!(u, interpolatable_field(vel.u, grid))
+        push!(v, interpolatable_field(vel.v, grid))
+    end
+end
+
+function gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
+    x0 = range(X_MIN, X_MAX, length=nx)
+    y0 = range(Y_MIN, Y_MAX, length=ny)
+    dx = x0[2] - x0[1]
+    dy = y0[2] - y0[1]
+
+    # Define the initial conditions as a standard matrix
+    initial_conditions_matrix = [ [x0[i], y0[j]] for i in 1:nx, j in 1:ny]
+    initial_conditions_matrix = initial_conditions_matrix'
+
+    # Flatten the initial conditions matrix into a 1D array
+    initial_conditions = vcat(initial_conditions_matrix...)
+    
+    return initial_conditions, dx, dy
+end
+
 function euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
     # t0 is the initial time 
     # t_start is where the starting time of the solution from viscous flow
@@ -105,7 +136,7 @@ function adams_bashforth_2_backward(initial_conditions, u, v, t0, t_start, dt, T
     return w3
 end
 
-function compute_FTLE(FTLE, nx, ny, T, final_positions, dx, dy)
+function compute_FTLE!(FTLE, nx, ny, T, final_positions, dx, dy)
 
     # Reshape the 2D array into the original 3D matrix format (nx, ny, 2)
     final_matrix = reshape(final_positions, ny, nx, 2)
