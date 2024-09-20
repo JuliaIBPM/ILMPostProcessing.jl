@@ -1,4 +1,19 @@
-# this function could be included in ViscousFlow.jl
+"""
+    make_interp_fields!(u, v, t_start, t_end, dt, velocity_fn, sol, sys, grid)
+
+Generate a array of interpolatable velocity fields u and v using the solution "sol" of a ViscousFlow problem. Each element of u and v is essentially a "Vectorfield!" used when solving an ODEProblem.
+
+Note: This function could be included in ViscousFlow.jl. 
+
+The inputs are:
+- u, v = [] empty arrays to be computed
+- t_start: start time of sol
+- t_end: end time of sol 
+- dt: step size between consecutive velocity fields
+- velocity_fn: ViscousFlow.velocity, the function to compute velocity from the solution
+- sys: viscous flow system
+- grid: physical grid
+"""
 
 function make_interp_fields!(u, v, t_start, t_end, dt, velocity_fn, sol, sys, grid)
     time = t_start:dt:t_end
