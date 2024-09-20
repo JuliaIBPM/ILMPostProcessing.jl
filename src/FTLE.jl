@@ -35,10 +35,14 @@ function euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
     # dt is the interval between consecutive u and v fields
     # T is the integration time
 
+    w = initial_conditions
+
+    if T == 0.0
+        return w
+    end
+
     start_idx = Int(round((t0 - t_start) / dt + 1))
     iters = Int(round(T / dt - 1))
-
-    w = initial_conditions
 
     for i = start_idx:start_idx + iters
         x = w[:, 1]
@@ -57,10 +61,14 @@ function euler_backward(initial_conditions, u, v, t0, t_start, dt, T)
     # dt is the interval between consecutive u and v fields
     # T is the integration time
 
+    z = initial_conditions
+
+    if T == 0.0
+        return z
+    end
+    
     start_idx = Int(round((t0 - t_start) / dt + 1))
     iters = Int(round(T / dt - 1))
-
-    z = initial_conditions
 
     for i = start_idx:-1:start_idx - iters
         x = z[:, 1]
@@ -77,6 +85,10 @@ function adams_bashforth_2_forward(initial_conditions, u, v, t0, t_start, dt, T)
     # t_start is where the starting time of the solution from viscous flow
     # dt is the interval between consecutive u and v fields
     # T is the integration time
+
+    if T == 0
+        return initial_conditions
+    end
     
     start_idx = Int(round((t0 - t_start) / dt + 1))
     iters = Int(round(T / dt - 1))
@@ -109,6 +121,10 @@ function adams_bashforth_2_backward(initial_conditions, u, v, t0, t_start, dt, T
     # t_start is where the starting time of the solution from viscous flow
     # dt is the interval between consecutive u and v fields
     # T is the integration time
+
+    if T == 0
+        return initial_conditions
+    end
     
     start_idx = Int(round((t0 - t_start) / dt + 1))
     iters = Int(round(T / dt - 1))
