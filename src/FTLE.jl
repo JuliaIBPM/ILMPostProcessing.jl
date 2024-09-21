@@ -5,7 +5,7 @@ Generate a array of interpolatable velocity fields u and v using the solution "s
 
 Note: This function could be included in ViscousFlow.jl. 
 
-The inputs are:
+Inputs:
 - u, v = [] empty arrays to be computed
 - t_start: start time of sol
 - t_end: end time of sol 
@@ -33,7 +33,7 @@ end
 
 Generate a list of initial points (x, y) with a length of nx by ny. These initial conditions form a collocated grid in a matrix form and then flattened to a 1D array. The initial conditions could be used to compute FTLE or to visaulize trajectories.
 
-The inputs are:
+Inputs:
 X_MIN: minimum value of x coordinate
 X_MAX: maximum value of x coordinate
 nx: number of grid points in x coordinate
@@ -61,7 +61,7 @@ end
 
 This function uses the forward Euler method to solve the initial value problem (IVP) with velocity fields u, v, and a set of initial points at t0. The step size is dt, and the final values represent the locations of the initial points after a length of time T. 
 
-The inputs are:
+Inputs:
 initial_conditions: generated with function gen_init_conds
 u, v: arrays of interpolatable velocity fields from function make_interp_fields!
 t0: time of the initial condition (e.g., for u and v from time = (0.0, 20.0), t0 = 6.0 means to use initial time = 6.0)
@@ -97,7 +97,7 @@ Similar to euler_forward, except that the final points represent the initial poi
 
 Note: This is not backwards Euler. 
 
-The inputs are:
+Inputs:
 initial_conditions: generated with function gen_init_conds
 u, v: arrays of interpolatable velocity fields from function make_interp_fields!
 t0: time of the initial condition (e.g., for u and v from time = (0.0, 20.0), t0 = 6.0 means to use initial time = 6.0)
@@ -137,7 +137,7 @@ end
 
 Similar to euler_forward, except that it uses the Adams-Bashforth 2-step multistep method rather than forward Euler's method.
 
-The inputs are:
+Inputs:
 initial_conditions: generated with function gen_init_conds
 u, v: arrays of interpolatable velocity fields from function make_interp_fields!
 t0: time of the initial condition (e.g., for u and v from time = (0.0, 20.0), t0 = 6.0 means to use initial time = 6.0)
@@ -182,7 +182,7 @@ end
 
 Similar to euler_backward, except that it uses the Adams-Bashforth 2-step multistep method rather than forward Euler's method.
 
-The inputs are:
+Inputs:
 initial_conditions: generated with function gen_init_conds
 u, v: arrays of interpolatable velocity fields from function make_interp_fields!
 t0: time of the initial condition (e.g., for u and v from time = (0.0, 20.0), t0 = 6.0 means to use initial time = 6.0)
@@ -221,6 +221,20 @@ function adams_bashforth_2_backward(initial_conditions, u, v, t0, t_start, dt, T
     
     return w3
 end
+
+"""
+    compute_FTLE!(FTLE, nx, ny, T, final_positions, dx, dy)
+
+Computes the FTLE field given the final positions of initial points on a collocated grid with parameters nx, ny, dx, dy, given the length of integration time T. The underlying math is detailed in: https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/computation.html. For each grid point, the function first computes the gradient of the flow map using a two point central difference formula. Then, the function calculates the maximum eigenvalue of the 2 x 2 gradient matrix, which is used to compute the FTLE value.
+
+Inputs:
+- FTLE: an empty 2D array (i.e., FTLE = zeros(Float64, ny - 2, nx - 2)), nx - 2 and ny - 2 accounts for the boundary points in the central    
+        difference formula
+- nx, ny: number of grid points in x and y coordinates
+- T: length of integration time
+- final_positions: solutions of the IVP solved by forward Euler or Adams-Bashforth
+- dx, dy: spacing bewtween grid points in x and y coordinates        
+"""
 
 function compute_FTLE!(FTLE, nx, ny, T, final_positions, dx, dy)
 
