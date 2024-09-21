@@ -31,7 +31,7 @@ end
 """
     gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
 
-Generate a list of initial conditions (x, y) with a length of nx by ny. These initial conditions form a collocated grid in a matrix form and then flattened to a 1D array. The initial conditions could be used to compute FTLE or to visaulize trajectories.
+Generate a list of initial points (x, y) with a length of nx by ny. These initial conditions form a collocated grid in a matrix form and then flattened to a 1D array. The initial conditions could be used to compute FTLE or to visaulize trajectories.
 
 The inputs are:
 X_MIN: minimum value of x coordinate
@@ -56,12 +56,21 @@ function gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
     return initial_conditions, dx, dy
 end
 
-function euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
-    # t0 is the initial time 
-    # t_start is where the starting time of the solution from viscous flow
-    # dt is the interval between consecutive u and v fields
-    # T is the integration time
+"""
+    euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
 
+This function uses the forward Euler method to solve the initial value problem (IVP) with velocity fields u, v, and a set of initial points at t0. The step size is dt, and the final values represent the locations of the initial points after a length of time T. 
+
+The inputs are:
+initial_conditions: generated with function gen_init_conds
+u, v: arrays of interpolatable velocity fields from function make_interp_fields!
+t0: time of the initial condition (e.g., for u and v from time = (0.0, 20.0), t0 = 6.0 means to use initial time = 6.0)
+t_start: starting time of u and v
+dt: step size between consecutive velocity fields
+T: length of integration time
+"""
+
+function euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
     w = initial_conditions
 
     if T == 0.0
@@ -80,6 +89,22 @@ function euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
     return w
 
 end
+
+"""
+    euler_backward(initial_conditions, u, v, t0, t_start, dt, T)
+
+Similar to euler_forward, except that the final points represent the initial points at a length of time T ahead of t0. 
+
+Note: This is not backwards Euler. 
+
+The inputs are:
+initial_conditions: generated with function gen_init_conds
+u, v: arrays of interpolatable velocity fields from function make_interp_fields!
+t0: time of the initial condition (e.g., for u and v from time = (0.0, 20.0), t0 = 6.0 means to use initial time = 6.0)
+t_start: starting time of u and v
+dt: step size between consecutive velocity fields
+T: length of integration time
+"""
 
 function euler_backward(initial_conditions, u, v, t0, t_start, dt, T)
     # this is not backward euler, it is forward euler method going back in time
@@ -107,12 +132,21 @@ function euler_backward(initial_conditions, u, v, t0, t_start, dt, T)
 
 end
 
-function adams_bashforth_2_forward(initial_conditions, u, v, t0, t_start, dt, T)
-    # t0 is the initial time 
-    # t_start is where the starting time of the solution from viscous flow
-    # dt is the interval between consecutive u and v fields
-    # T is the integration time
+"""
+    adams_bashforth_2_forward(initial_conditions, u, v, t0, t_start, dt, T)
 
+Similar to euler_forward, except that it uses the Adams-Bashforth 2-step multistep method rather than forward Euler's method.
+
+The inputs are:
+initial_conditions: generated with function gen_init_conds
+u, v: arrays of interpolatable velocity fields from function make_interp_fields!
+t0: time of the initial condition (e.g., for u and v from time = (0.0, 20.0), t0 = 6.0 means to use initial time = 6.0)
+t_start: starting time of u and v
+dt: step size between consecutive velocity fields
+T: length of integration time
+"""
+
+function adams_bashforth_2_forward(initial_conditions, u, v, t0, t_start, dt, T)
     if T == 0
         return initial_conditions
     end
@@ -143,12 +177,21 @@ function adams_bashforth_2_forward(initial_conditions, u, v, t0, t_start, dt, T)
     return w3
 end
 
-function adams_bashforth_2_backward(initial_conditions, u, v, t0, t_start, dt, T)
-    # t0 is the initial time 
-    # t_start is where the starting time of the solution from viscous flow
-    # dt is the interval between consecutive u and v fields
-    # T is the integration time
+"""
+    adams_bashforth_2_backward(initial_conditions, u, v, t0, t_start, dt, T)
 
+Similar to euler_backward, except that it uses the Adams-Bashforth 2-step multistep method rather than forward Euler's method.
+
+The inputs are:
+initial_conditions: generated with function gen_init_conds
+u, v: arrays of interpolatable velocity fields from function make_interp_fields!
+t0: time of the initial condition (e.g., for u and v from time = (0.0, 20.0), t0 = 6.0 means to use initial time = 6.0)
+t_start: starting time of u and v
+dt: step size between consecutive velocity fields
+T: length of integration time
+"""
+
+function adams_bashforth_2_backward(initial_conditions, u, v, t0, t_start, dt, T)
     if T == 0
         return initial_conditions
     end
