@@ -28,6 +28,18 @@ function make_interp_fields!(u, v, t_start, t_end, dt, velocity_fn, sol, sys, gr
     end
 end
 
+"""
+    gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
+
+Generate a list of initial conditions (x, y) with a length of nx by ny. These initial conditions form a collocated grid in a matrix form and then flattened to a 1D array. The initial conditions could be used to compute FTLE or to visaulize trajectories.
+
+The inputs are:
+X_MIN: minimum value of x coordinate
+X_MAX: maximum value of x coordinate
+nx: number of grid points in x coordinate
+same for y 
+"""
+
 function gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
     x0 = range(X_MIN, X_MAX, length=nx)
     y0 = range(Y_MIN, Y_MAX, length=ny)
