@@ -253,17 +253,14 @@ function compute_FTLE!(FTLE, nx, ny, T, final_positions, dx, dy)
     a21 = (final_y_i_plus - final_y_i_minus) / 2 / dx
     a22 = (final_y_j_plus - final_y_j_minus) / 2 / dy
 
-    # Compute delta components
-    delta_11 = a11.^2 .+ a21.^2
-    delta_12 = a11 .* a12 .+ a21 .* a22
-    delta_22 = a12.^2 .+ a22.^2
+    # Compute the components of delta matrix = A' * A
+    a = a11.^2 .+ a21.^2
+    b = a11 .* a12 .+ a21 .* a22
+    c = a12.^2 .+ a22.^2
 
     # Eigenvalues of the delta matrix using characteristic equation
-    trace = delta_11 .+ delta_22
-    determinant = delta_11 .* delta_22 .- delta_12.^2
-    discriminant = sqrt.(trace.^2 .- 4 .* determinant)
-    lambda1 = (trace .+ discriminant) ./ 2
+    lambda = (a .+ c .+ sqrt.((a .- c).^2 .+ 4 .* b.^2)) ./ 2
 
     # Compute FTLE (same slicing approach to match the dimensions)
-    FTLE .= 1 / (2 * abs(T)) .* log.(lambda1)
+    FTLE .= 1 / (2 * abs(T)) .* log.(lambda)
 end
