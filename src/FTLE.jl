@@ -14,7 +14,6 @@ Inputs:
 - sys: viscous flow system
 - grid: physical grid
 """
-
 function make_interp_fields!(u, v, t_start, t_end, dt, velocity_fn, sol, sys, grid)
     time = t_start:dt:t_end
 
@@ -39,7 +38,6 @@ X_MAX: maximum value of x coordinate
 nx: number of grid points in x coordinate
 same for y 
 """
-
 function gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
     x0 = range(X_MIN, X_MAX, length=nx)
     y0 = range(Y_MIN, Y_MAX, length=ny)
@@ -69,7 +67,6 @@ t_start: starting time of u and v
 dt: step size between consecutive velocity fields
 T: length of integration time
 """
-
 function euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
     w = initial_conditions
 
@@ -105,7 +102,6 @@ t_start: starting time of u and v
 dt: step size between consecutive velocity fields
 T: length of integration time
 """
-
 function euler_backward(initial_conditions, u, v, t0, t_start, dt, T)
     # this is not backward euler, it is forward euler method going back in time
     # t0 is the initial time 
@@ -145,7 +141,6 @@ t_start: starting time of u and v
 dt: step size between consecutive velocity fields
 T: length of integration time
 """
-
 function adams_bashforth_2_forward(initial_conditions, u, v, t0, t_start, dt, T)
     if T == 0
         return initial_conditions
@@ -190,7 +185,6 @@ t_start: starting time of u and v
 dt: step size between consecutive velocity fields
 T: length of integration time
 """
-
 function adams_bashforth_2_backward(initial_conditions, u, v, t0, t_start, dt, T)
     if T == 0
         return initial_conditions
@@ -235,7 +229,6 @@ Inputs:
 - final_positions: solutions of the IVP solved by forward Euler or Adams-Bashforth
 - dx, dy: spacing bewtween grid points in x and y coordinates        
 """
-
 function compute_FTLE!(FTLE, nx, ny, T, final_positions, dx, dy)
 
     # Reshape the 2D array into the original 3D matrix format (nx, ny, 2)
