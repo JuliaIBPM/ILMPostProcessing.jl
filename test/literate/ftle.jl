@@ -156,5 +156,5 @@ end every 1 fps = 2
 
 #md # ## FTLE functions
 #md # ```@docs
-#md # ftle
+#md # compute_FTLE!
 #md # ```
