@@ -160,7 +160,7 @@ end every 1 fps = 2
 
 ## FTLE functions
 ```@docs
-ftle
+compute_FTLE!
 ```
 
 ---
