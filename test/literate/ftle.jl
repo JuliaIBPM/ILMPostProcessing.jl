@@ -112,47 +112,50 @@ contour!(x, y, FTLE_backward, fill=false, colorbar=false, c=:viridis)
 plot!([], [], label="Forward FTLE", linecolor=:orange)
 plot!([], [], label="Backward FTLE", linecolor=:green)
 
-#=
-### Computing the FTLE Fields at a Range of Times and Generate GIF
-Also advances the trajectories of a group of points. The first example places initial points near the unstable manifold (orange). 
-=#
+#md # ```@meta
+#md # :execute => false
+#md # ```
 
-x_min = -1.0
-x_max = 0.0
-y_min = 0.5
-y_max = 1.5
-nx_p, ny_p = 10, 10
-
-initial_points, dx_p, dy_p = ILMPostProcessing.gen_init_conds(x_min, x_max, y_min, y_max, nx_p, ny_p)
-
-FTLE = zeros(Float64, ny - 2, nx - 2)
-T = 6.0
-
-@gif for t0 in 6.0:0.5:12.0
-    print(t0)
-
-    points = ILMPostProcessing.euler_forward(initial_points, u, v, 6.0, t_start, dt, t0 - 6.0)
-
-    w = ILMPostProcessing.euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
-    z = ILMPostProcessing.euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
-
-    FTLE_forward = zeros(Float64, ny - 2, nx - 2)
-    ILMPostProcessing.compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
-
-    FTLE_backward = zeros(Float64, ny - 2, nx - 2)
-    ILMPostProcessing.compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
-
-    x = range(X_MIN + dx, stop = X_MAX - dx, length=nx - 2)
-    y = range(Y_MIN + dy, stop = Y_MAX - dy, length=ny - 2)
-    
-    contour(x, y, FTLE_forward, fill=false, title="FTLE, t = $t0", xlabel="x", ylabel="y", colorbar=false, c=:inferno, xlim = (-2, 2), ylim = (-2, 2), ratio = 1, size = (800, 800))
-    contour!(x, y, FTLE_backward, fill=false, colorbar=false, c=:viridis)
-
-    plot!([], [], label="Forward FTLE", linecolor=:orange)
-    plot!([], [], label="Backward FTLE", linecolor=:green)
-    scatter!(points[:,1], points[:,2], label = "Points", markercolor=:black, legend=:topright)
-
-end every 1 fps = 2
+#md # ```julia
+#md # ### Computing the FTLE Fields at a Range of Times and Generate GIF
+#md # Also advances the trajectories of a group of points. The first example places initial points near the unstable manifold (orange).
+#md #
+#md # x_min = -1.0
+#md # x_max = 0.0
+#md # y_min = 0.5
+#md # y_max = 1.5
+#md # nx_p, ny_p = 10, 10
+#md #
+#md # initial_points, dx_p, dy_p = ILMPostProcessing.gen_init_conds(x_min, x_max, y_min, y_max, nx_p, ny_p)
+#md #
+#md # FTLE = zeros(Float64, ny - 2, nx - 2)
+#md # T = 6.0
+#md #
+#md # @gif for t0 in 6.0:0.5:12.0
+#md #     print(t0)
+#md #
+#md #     points = ILMPostProcessing.euler_forward(initial_points, u, v, 6.0, t_start, dt, t0 - 6.0)
+#md #
+#md #     w = ILMPostProcessing.euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
+#md #     z = ILMPostProcessing.euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
+#md #
+#md #     FTLE_forward = zeros(Float64, ny - 2, nx - 2)
+#md #     ILMPostProcessing.compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
+#md #
+#md #     FTLE_backward = zeros(Float64, ny - 2, nx - 2)
+#md #     ILMPostProcessing.compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
+#md #
+#md #     x = range(X_MIN + dx, stop = X_MAX - dx, length=nx - 2)
+#md #     y = range(Y_MIN + dy, stop = Y_MAX - dy, length=ny - 2)
+#md #
+#md #     contour(x, y, FTLE_forward, fill=false, title="FTLE, t = $t0", xlabel="x", ylabel="y", colorbar=false, c=:inferno, xlim = (-2, 2), ylim = (-2, 2), ratio = 1, size = (800, 800))
+#md #     contour!(x, y, FTLE_backward, fill=false, colorbar=false, c=:viridis)
+#md #
+#md #     plot!([], [], label="Forward FTLE", linecolor=:orange)
+#md #     plot!([], [], label="Backward FTLE", linecolor=:green)
+#md #     scatter!(points[:,1], points[:,2], label = "Points", markercolor=:black, legend=:topright)
+#md # end every 1 fps = 2
+#md # ```
 
 #md # ## FTLE functions
 #md # ```@docs

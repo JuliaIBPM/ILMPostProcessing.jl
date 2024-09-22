@@ -116,10 +116,14 @@ plot!([], [], label="Forward FTLE", linecolor=:orange)
 plot!([], [], label="Backward FTLE", linecolor=:green)
 ````
 
+```@meta
+:execute => false
+```
+
+```julia
 ### Computing the FTLE Fields at a Range of Times and Generate GIF
 Also advances the trajectories of a group of points. The first example places initial points near the unstable manifold (orange).
 
-````@example ftle
 x_min = -1.0
 x_max = 0.0
 y_min = 0.5
@@ -154,9 +158,8 @@ T = 6.0
     plot!([], [], label="Forward FTLE", linecolor=:orange)
     plot!([], [], label="Backward FTLE", linecolor=:green)
     scatter!(points[:,1], points[:,2], label = "Points", markercolor=:black, legend=:topright)
-
 end every 1 fps = 2
-````
+```
 
 ## FTLE functions
 ```@docs
