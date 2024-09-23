@@ -7,6 +7,7 @@ solutions of PDEs carried out with the [ImmersedLayers.jl](https://github.com/Ju
 are
 * Proper orthogonal decomposition (POD)
 * Dynamic mode decomposition (DMD)
+* Finite-time Lyapunov exponent (FTLE)
 
 ## Installation
 
