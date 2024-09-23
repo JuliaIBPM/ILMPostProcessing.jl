@@ -35,7 +35,8 @@ docdir = "../docs/src/manual"
 litdir = "./literate"
 
 if GROUP == "All" || GROUP == "Auxiliary"
-  include("POD.jl")
+    include("POD.jl")
+    include("FTLE.jl")
 end
 
 if GROUP == "All" || GROUP == "Literate"
