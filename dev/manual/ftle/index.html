@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Finite-Time Lyapunov Exponent (FTLE) · ILMPostProcessing.jl</title><meta name="title" content="Finite-Time Lyapunov Exponent (FTLE) · ILMPostProcessing.jl"/><meta property="og:title" content="Finite-Time Lyapunov Exponent (FTLE) · ILMPostProcessing.jl"/><meta property="twitter:title" content="Finite-Time Lyapunov Exponent (FTLE) · ILMPostProcessing.jl"/><meta name="description" content="Documentation for ILMPostProcessing.jl."/><meta property="og:description" content="Documentation for ILMPostProcessing.jl."/><meta property="twitter:description" content="Documentation for ILMPostProcessing.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ILMPostProcessing.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../pod/">Proper orthogonal decomposition (POD)</a></li><li><a class="tocitem" href="../dmdtest/">Dynamic mode decomposition (DMD)</a></li><li class="is-active"><a class="tocitem" href>Finite-Time Lyapunov Exponent (FTLE)</a><ul class="internal"><li><a class="tocitem" href="#Setup-the-Co-rotating-Vortices-Problem"><span>Setup the Co-rotating Vortices Problem</span></a></li><li><a class="tocitem" href="#Solve-the-Problem"><span>Solve the Problem</span></a></li><li><a class="tocitem" href="#Discretize-the-Solution-in-Time"><span>Discretize the Solution in Time</span></a></li><li><a class="tocitem" href="#Generate-Initial-Conditions"><span>Generate Initial Conditions</span></a></li><li><a class="tocitem" href="#Solve-the-IVP-and-Generate-FTLE-Fields"><span>Solve the IVP and Generate FTLE Fields</span></a></li><li><a class="tocitem" href="#FTLE-functions"><span>FTLE functions</span></a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Manual</a></li><li class="is-active"><a href>Finite-Time Lyapunov Exponent (FTLE)</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Finite-Time Lyapunov Exponent (FTLE)</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaIBPM/ILMPostProcessing.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaIBPM/ILMPostProcessing.jl/blob/master/test/literate/ftle.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Finite-Time-Lyapunov-Exponent-(FTLE)"><a class="docs-heading-anchor" href="#Finite-Time-Lyapunov-Exponent-(FTLE)">Finite-Time Lyapunov Exponent (FTLE)</a><a id="Finite-Time-Lyapunov-Exponent-(FTLE)-1"></a><a class="docs-heading-anchor-permalink" href="#Finite-Time-Lyapunov-Exponent-(FTLE)" title="Permalink"></a></h1><p>In this example, we will compute the finite-time Laypunov exponent (FTLE) field for a co-rotating vortex pair.</p><pre><code class="language-julia hljs">using ILMPostProcessing
+using ViscousFlow
+using Plots</code></pre><h2 id="Setup-the-Co-rotating-Vortices-Problem"><a class="docs-heading-anchor" href="#Setup-the-Co-rotating-Vortices-Problem">Setup the Co-rotating Vortices Problem</a><a id="Setup-the-Co-rotating-Vortices-Problem-1"></a><a class="docs-heading-anchor-permalink" href="#Setup-the-Co-rotating-Vortices-Problem" title="Permalink"></a></h2><p>The grid Re number is chosen at 10.0 to speed up computations.</p><pre><code class="language-julia hljs">my_params = Dict()
+my_params[&quot;Re&quot;] = 300
+xlim = (-3.0,3.0)
+ylim = (-3.0,3.0)
+my_params[&quot;grid Re&quot;] = 10.0
+
+g = setup_grid(xlim,ylim,my_params)
+
+sys = viscousflow_system(g,phys_params=my_params)
+
+σ = 0.1
+x01, y01 = 1.0, 0.0
+x02, y02 = -1.0, 0.0
+A = 3
+twogauss = SpatialGaussian(σ,σ,x01,y01,A) + SpatialGaussian(σ,σ,x02,y02,A)
+
+u0 = init_sol(twogauss,sys)
+
+plot(vorticity(u0,sys,0.0),sys)</code></pre><img src="caac0283.svg" alt="Example block output"/><h2 id="Solve-the-Problem"><a class="docs-heading-anchor" href="#Solve-the-Problem">Solve the Problem</a><a id="Solve-the-Problem-1"></a><a class="docs-heading-anchor-permalink" href="#Solve-the-Problem" title="Permalink"></a></h2><p>Step the integrator repeatedly until the solution is generated for t = (0.0, 18.0).</p><pre><code class="language-julia hljs">T = 18.0
+tspan = (0.0,T)
+integrator = init(u0,tspan,sys)
+
+@time begin
+    step!(integrator,T)
+end
+
+sol = integrator.sol
+
+plt = plot(layout = (5,5), size = (800, 800), legend=:false)
+tsnap = 0.0:1.0:T
+for (i, t) in enumerate(tsnap)
+    plot!(plt[i],vorticity(sol,sys,t),sys,levels=range(0.1,5,length=31))
+end
+savefig(plt,&quot;CoRotating.pdf&quot;)
+plt</code></pre><img src="5cf6f08c.svg" alt="Example block output"/><h2 id="Discretize-the-Solution-in-Time"><a class="docs-heading-anchor" href="#Discretize-the-Solution-in-Time">Discretize the Solution in Time</a><a id="Discretize-the-Solution-in-Time-1"></a><a class="docs-heading-anchor-permalink" href="#Discretize-the-Solution-in-Time" title="Permalink"></a></h2><p>This step stores the velocity fields as interpolatable fields at chosen time steps so that the velocity fields don&#39;t need to be computed every iteration the IVP is solved.</p><pre><code class="language-julia hljs">u = []
+v = []
+t_start = 0.0
+t_end = 18.0
+dt = 0.01
+
+ILMPostProcessing.make_interp_fields!(u, v, t_start, t_end, dt, ViscousFlow.velocity, sol, sys, g)</code></pre><h2 id="Generate-Initial-Conditions"><a class="docs-heading-anchor" href="#Generate-Initial-Conditions">Generate Initial Conditions</a><a id="Generate-Initial-Conditions-1"></a><a class="docs-heading-anchor-permalink" href="#Generate-Initial-Conditions" title="Permalink"></a></h2><pre><code class="language-julia hljs">X_MIN = -2.0
+X_MAX = 2.0
+Y_MIN = -2.0
+Y_MAX = 2.0
+nx, ny = 400, 400
+
+initial_conditions, dx, dy = ILMPostProcessing.gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">([-2.0 -2.0; -2.0 -1.9899749373433584; … ; 2.0 1.9899749373433584; 2.0 2.0], 0.010025062656641603, 0.010025062656641603)</code></pre><h2 id="Solve-the-IVP-and-Generate-FTLE-Fields"><a class="docs-heading-anchor" href="#Solve-the-IVP-and-Generate-FTLE-Fields">Solve the IVP and Generate FTLE Fields</a><a id="Solve-the-IVP-and-Generate-FTLE-Fields-1"></a><a class="docs-heading-anchor-permalink" href="#Solve-the-IVP-and-Generate-FTLE-Fields" title="Permalink"></a></h2><h3 id="Computing-the-FTLE-Field-at-One-Time-Snapshot"><a class="docs-heading-anchor" href="#Computing-the-FTLE-Field-at-One-Time-Snapshot">Computing the FTLE Field at One Time Snapshot</a><a id="Computing-the-FTLE-Field-at-One-Time-Snapshot-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-the-FTLE-Field-at-One-Time-Snapshot" title="Permalink"></a></h3><p>Forward Euler&#39;s method is used here, but can also use ILMPostProcessing.adams<em>bashforth</em>2_forward.</p><pre><code class="language-julia hljs">FTLE = zeros(Float64, ny - 2, nx - 2)
+T = 6.0
+t0 = 6.0
+
+w = ILMPostProcessing.euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
+z = ILMPostProcessing.euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
+
+FTLE_forward = zeros(Float64, ny - 2, nx - 2)
+ILMPostProcessing.compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
+
+FTLE_backward = zeros(Float64, ny - 2, nx - 2)
+ILMPostProcessing.compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
+
+x = range(X_MIN + dx, stop = X_MAX - dx, length=nx - 2)
+y = range(Y_MIN + dy, stop = Y_MAX - dy, length=ny - 2)
+
+contour(x, y, FTLE_forward, fill=false, title=&quot;FTLE, t = $t0&quot;, xlabel=&quot;x&quot;, ylabel=&quot;y&quot;, colorbar=false, c=:inferno, ratio = 1, xlim = (-2, 2), ylim = (-2, 2), size = (800, 800), label = &quot;Forward FTLE&quot;, legend=:topright)
+contour!(x, y, FTLE_backward, fill=false, colorbar=false, c=:viridis)
+
+plot!([], [], label=&quot;Forward FTLE&quot;, linecolor=:orange)
+plot!([], [], label=&quot;Backward FTLE&quot;, linecolor=:green)</code></pre><img src="f70c347b.svg" alt="Example block output"/><h3 id="Computing-the-FTLE-Fields-at-a-Range-of-Times-and-Generate-GIF"><a class="docs-heading-anchor" href="#Computing-the-FTLE-Fields-at-a-Range-of-Times-and-Generate-GIF">Computing the FTLE Fields at a Range of Times and Generate GIF</a><a id="Computing-the-FTLE-Fields-at-a-Range-of-Times-and-Generate-GIF-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-the-FTLE-Fields-at-a-Range-of-Times-and-Generate-GIF" title="Permalink"></a></h3><p>Also advances the trajectories of a group of points. The first example places initial points near the unstable manifold (orange).</p><pre><code class="language-julia hljs">x_min = -1.0
+x_max = 0.0
+y_min = 0.5
+y_max = 1.5
+nx_p, ny_p = 10, 10
+
+initial_points, dx_p, dy_p = ILMPostProcessing.gen_init_conds(x_min, x_max, y_min, y_max, nx_p, ny_p)
+
+FTLE = zeros(Float64, ny - 2, nx - 2)
+T = 6.0</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">6.0</code></pre><p>The code here creates a gif</p><pre><code class="nohighlight hljs">@gif for t0 in 6.0:0.5:12.0
+    print(t0)
+
+    points = ILMPostProcessing.euler_forward(initial_points, u, v, 6.0, t_start, dt, t0 - 6.0)
+
+    w = ILMPostProcessing.euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
+    z = ILMPostProcessing.euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
+
+    FTLE_forward = zeros(Float64, ny - 2, nx - 2)
+    ILMPostProcessing.compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
+
+    FTLE_backward = zeros(Float64, ny - 2, nx - 2)
+    ILMPostProcessing.compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
+
+    x = range(X_MIN + dx, stop = X_MAX - dx, length=nx - 2)
+    y = range(Y_MIN + dy, stop = Y_MAX - dy, length=ny - 2)
+
+    contour(x, y, FTLE_forward, fill=false, title=&quot;FTLE, t = $t0&quot;, xlabel=&quot;x&quot;, ylabel=&quot;y&quot;, colorbar=false, c=:inferno, xlim = (-2, 2), ylim = (-2, 2), ratio = 1, size = (800, 800))
+    contour!(x, y, FTLE_backward, fill=false, colorbar=false, c=:viridis)
+
+    plot!([], [], label=&quot;Forward FTLE&quot;, linecolor=:orange)
+    plot!([], [], label=&quot;Backward FTLE&quot;, linecolor=:green)
+    scatter!(points[:,1], points[:,2], label = &quot;Points&quot;, markercolor=:black, legend=:topright)
+end every 1 fps = 2</code></pre><h2 id="FTLE-functions"><a class="docs-heading-anchor" href="#FTLE-functions">FTLE functions</a><a id="FTLE-functions-1"></a><a class="docs-heading-anchor-permalink" href="#FTLE-functions" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="ILMPostProcessing.compute_FTLE!" href="#ILMPostProcessing.compute_FTLE!"><code>ILMPostProcessing.compute_FTLE!</code></a> — <span class="docstring-category">Function</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">compute_FTLE!(FTLE, nx, ny, T, final_positions, dx, dy)</code></pre><p>Compute the <code>FTLE</code> field given the final positions of initial points on a collocated grid. </p><p>The underlying math is detailed in: https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/computation.html. For each grid point, first compute the gradient of the flow map using two point central differencing. Then, calculate the maximum eigenvalue of the 2 x 2 gradient matrix. Finally, compute the FTLE value using the eigenvalue.</p><p><strong>Arguments</strong></p><ul><li><code>FTLE</code>: an empty 2D array (i.e., <code>FTLE = zeros(Float64, ny - 2, nx - 2))</code>, <code>nx - 2</code> and <code>ny - 2</code> accounts for the boundary points in the central difference formula</li><li><code>nx</code>: number of grid points in x </li><li><code>ny</code>: number of grid points in y </li><li><code>T</code>: length of integration time</li><li><code>final_positions</code>: solutions of the IVP </li><li><code>dx</code>: spacing of initial grids in x </li><li><code>dy</code>: spacing of initial grids in y </li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaIBPM/ILMPostProcessing.jl/blob/f639876861ff89e3f489830a13ee8f4b15a61a6f/src/FTLE.jl#L226-L241">source</a></section></article><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../dmdtest/">« Dynamic mode decomposition (DMD)</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Monday 23 September 2024 21:39">Monday 23 September 2024</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
