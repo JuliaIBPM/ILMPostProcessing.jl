@@ -20,7 +20,11 @@ function displacement_field(vr::Vector{Tuple{T,T}},tr::StepRangeLen,x0::ScalarGr
   ti, tf = Trange
   u0 = ArrayPartition(deepcopy(x0),deepcopy(y0))
   sol = compute_trajectory(vr,tr,u0,Trange,alg=Euler(),saveat=[tf])
-  xf, yf = sol.u[1].x
+  xhist = map(s -> s.x[1],sol)
+  yhist = map(s -> s.x[2],sol)
+
+  xf, yf = xhist[1], yhist[1]
+  
   return xf, yf
 end
 
