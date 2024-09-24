@@ -3,6 +3,7 @@ module ILMPostProcessing
 using ImmersedLayers
 using LinearAlgebra
 using Statistics
+using OrdinaryDiffEq
 
 export pod, dmd, PODModes, DMDModes, compute_FTLE!, compute_trajectory
 
