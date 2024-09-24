@@ -1,6 +1,7 @@
 # TRAJECTORY CALCULATION #
 
 import ImmersedLayers.CartesianGrids.Interpolations: AbstractInterpolation
+import ImmersedLayers.ConstrainedSystems.RecursiveArrayTools: ArrayPartition 
 
 const DEFAULT_DT = 0.001
 const DEFAULT_DT_STREAK = 0.01
@@ -8,10 +9,34 @@ const DEFAULT_ALG = Euler()
 
 ## APIs ##
 
-function compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple;Δt::Real=step(tr),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...) where T<:CartesianGrids.Interpolations.AbstractInterpolation
+"""
+    displacement_field(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,x0::ScalarGridData,y0::ScalarGridData,Trange::Tuple[;Δt=step(tr),alg=Euler()])
+
+Calculate the displacement of particles initally at coordinates `x0` and `y0` over the range of times `Trange = (ti,tf)`, using the vector of spatially-interpolated
+velocity fields in `vr` (with corresponding times `tr`). The final time in `Trange` can be earlier than the initial time if backward trajectories are desired.
+The optional keyword arguments are `Δt`, the time step size (which defaults to the step size in `tr`, but could be an integer multiple larger than 1). 
+"""
+function displacement_field(vr::Vector{Tuple{T,T}},tr::StepRangeLen,x0::ScalarGridData,y0::ScalarGridData,Trange::Tuple;Δt::Real=step(tr),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
+  ti, tf = Trange
+  u0 = ArrayPartition(deepcopy(x0),deepcopy(y0))
+  sol = compute_trajectory(vr,tr,u0,Trange,alg=Euler(),saveat=[tf])
+  xf, yf = sol.u[1].x
+  return xf, yf
+end
+
+
+"""
+   compute_trajectory(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,X₀::Vector/Vector{Vector},Trange::Tuple[;Δt=step(tr),alg=Euler()])
+
+Calculate the trajectories of particles with initial location(s) `X₀`. The argument
+`vr` is a vector of spatially-interpolated velocity fields, `tr` is the corresponding time array, `Trange` is the starting
+and ending integration times. The optional keyword arguments are `Δt`, the time step size (which defaults to the step size in `tr`, but could be an integer multiple larger than 1). The output is the solution
+structure for the `OrdinaryDiffEq` package.
+"""
+function compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple;Δt::Real=step(tr),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
   @assert length(vr) == length(tr) "Supplied time array must be same length as supplied velocity array"
   ti, tf = _check_times(tr,Trange,Δt)
-  _dt = sign(tf-ti)*Δt
+  _dt = sign(tf-ti)*abs(Δt)
 
   vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
 
@@ -26,8 +51,8 @@ end
    compute_trajectory(vel::Edges,sys,X₀::Vector/Vector{Vector},Tmax[,Δt=0.001])
 
 Calculate the trajectory of a particle with initial location `X₀`. The argument
-`vel` is edge-type grid data, `sys` is a Navier-Stokes type system, `Tmax` is the final
-integration time, and `Δt` is the time step size. The output is the solution
+`vel` is edge-type grid data, `sys` is a Navier-Stokes type system, `Trange` is a tuple of the initial and final time of integration (and the final time
+can be earlier than the initial time if backward trajectories are desired), and `Δt` is the time step size. The output is the solution
 structure for the `OrdinaryDiffEq` package.
 """
 compute_trajectory(u::Edges, sys::ILMSystem, X₀::Union{Vector{S},Vector{Vector{S}}},Trange::Tuple;Δt=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where S <: Real =
@@ -43,7 +68,8 @@ can be specified as either a single vector `[x0,y0]` or a vector of vectors
 for multiple tracer particles. The arguments
 `u` and `v` are either interpolated velocity field components from a computational solution
 or are functions. If they are functions, then each of them should be of the form `u(x,y,t)`
-and `v(x,y,t)`; `Trange` is a tuple of the initial and final time of integration; and `Δt` is the
+and `v(x,y,t)`; `Trange` is a tuple of the initial and final time of integration (and the final time
+can be earlier than the initial time if backward trajectories are desired); and `Δt` is the
 time step size, which defaults to 0.001. The output is the solution
 structure for the `OrdinaryDiffEq` package (or, for multiple particles, a vector
 of such solution structures).
@@ -52,9 +78,13 @@ function compute_trajectory(ufield::AbstractInterpolation{T,2},
                             vfield::AbstractInterpolation{T,2},
                             X₀::Vector{S},Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {T,S<:Real}
 
+  
+  ti, tf = Trange
+  _dt = sign(tf-ti)*abs(Δt)
+
   vfcn!(dR,R,p,t) = _vfcn_autonomous!(dR,R,p,t,ufield,vfield)
 
-  sol = _solve_trajectory(vfcn!,X₀,Trange,Δt,alg;kwargs...)
+  sol = _solve_trajectory(vfcn!,X₀,Trange,_dt,alg;kwargs...)
   return sol
 
 end
@@ -75,9 +105,11 @@ function compute_trajectory(ufcn::Function,
                             vfcn::Function,
                             X₀::Vector{S},Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
 
+  ti, tf = Trange
+  _dt = sign(tf-ti)*abs(Δt)
   velfcn(R,p,t) = _vfcn_nonautonomous(R,p,t,ufcn,vfcn)
 
-  sol = _solve_trajectory(velfcn,X₀,Trange,Δt,alg;kwargs...)
+  sol = _solve_trajectory(velfcn,X₀,Trange,_dt,alg;kwargs...)
   return sol
 
 end

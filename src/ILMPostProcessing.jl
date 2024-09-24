@@ -5,7 +5,8 @@ using LinearAlgebra
 using Statistics
 using OrdinaryDiffEq
 
-export pod, dmd, PODModes, DMDModes, compute_FTLE!, compute_trajectory
+export pod, dmd, PODModes, DMDModes, compute_FTLE!, compute_trajectory,
+        compute_streamline, compute_streakline, displacement_field
 
 include("utilities.jl")
 include("trajectories.jl")
