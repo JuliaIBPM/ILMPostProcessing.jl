@@ -3,11 +3,58 @@
 import ImmersedLayers.CartesianGrids.Interpolations: AbstractInterpolation
 import ImmersedLayers.ConstrainedSystems.RecursiveArrayTools: ArrayPartition 
 
-const DEFAULT_DT = 0.001
+const DEFAULT_DT = 0.01
 const DEFAULT_DT_STREAK = 0.01
 const DEFAULT_ALG = Euler()
+const DEFAULT_T_DURATION = 3.0
+
+"""
+    Trajectories
+
+Type returned by trajectory calculations, containing a set of one or more trajectories.
+For an instance `traj` of this type, the
+trajectory time array can be returned with `traj.t`. The number of trajectories is returned
+by `traj.np`. Any trajectory contained in the set can be obtained with `traj[p]`, where
+`p` must be `0 < p <= traj.np`. 
+"""
+struct Trajectories{TT,XT}
+  np :: Integer
+  t :: TT
+  xhistory :: Vector{XT}
+  yhistory :: Vector{XT}
+end
+
+function Trajectories(sol::ODESolution)
+  xhist, yhist = _trajectories(sol.u)
+  Trajectories(length(xhist[1]),sol.t,xhist,yhist)
+end
+
+function _trajectories(u::Vector{T}) where {T<:ArrayPartition}
+  xhist = map(s -> s.x[1],u)
+  yhist = map(s -> s.x[2],u)
+  return xhist, yhist
+end
+
+function _trajectories(u::Vector{T}) where {T<:Vector}
+  xhist = map(s -> s[1],u)
+  yhist = map(s -> s[2],u)
+  return xhist, yhist
+end
+
+Base.size(traj::Trajectories) = traj.np
+
+Base.length(traj::Trajectories) = traj.np
+
+Base.getindex(traj::Trajectories,k::Integer) = _pick_trajectory(traj,k)
+
+function _pick_trajectory(traj::Trajectories,pnum::Integer)
+  @assert pnum > 0 && pnum <= traj.np "Unavailable trajectory number"
+  return map(x -> x[pnum],traj.xhistory), map(y -> y[pnum],traj.yhistory)
+end
 
 ## APIs ##
+
+
 
 """
     displacement_field(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,x0::ScalarGridData,y0::ScalarGridData,Trange::Tuple[;Δt=step(tr),alg=Euler()])
@@ -18,57 +65,47 @@ The optional keyword arguments are `Δt`, the time step size (which defaults to 
 """
 function displacement_field(vr::Vector{Tuple{T,T}},tr::StepRangeLen,x0::ScalarGridData,y0::ScalarGridData,Trange::Tuple;Δt::Real=step(tr),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
   ti, tf = Trange
-  u0 = ArrayPartition(deepcopy(x0),deepcopy(y0))
-  sol = compute_trajectory(vr,tr,u0,Trange,alg=Euler(),saveat=[tf])
-  xhist = map(s -> s.x[1],sol)
-  yhist = map(s -> s.x[2],sol)
+  traj = compute_trajectory(vr,tr,(x0,y0),Trange,alg=Euler(),saveat=[tf])
 
-  xf, yf = xhist[1], yhist[1]
-  
+  xf, yf = traj.xhistory[1], traj.yhistory[1]
+
   return xf, yf
 end
 
 
 """
-   compute_trajectory(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,X₀::Vector/Vector{Vector},Trange::Tuple[;Δt=step(tr),alg=Euler()])
+   compute_trajectory(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,X₀,Trange::Tuple[;Δt=step(tr),alg=Euler()])
 
 Calculate the trajectories of particles with initial location(s) `X₀`. The argument
-`vr` is a vector of spatially-interpolated velocity fields, `tr` is the corresponding time array, `Trange` is the starting
+`vr` is a vector of spatially-interpolated velocity fields, `tr` is the corresponding time array,
+`X₀` can be specified as either a single vector `[x0,y0]`, a vector of vectors specifying
+x, y pairs, or a tuple of vectors or arrays specifying x and y positions, respectively,
+for multiple tracer particles. `Trange` is a tuple of the starting
 and ending integration times. The optional keyword arguments are `Δt`, the time step size (which defaults to the step size in `tr`, but could be an integer multiple larger than 1). The output is the solution
 structure for the `OrdinaryDiffEq` package.
 """
-function compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple;Δt::Real=step(tr),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
+function compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple;Δt::Real=step(tr),alg=DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
   @assert length(vr) == length(tr) "Supplied time array must be same length as supplied velocity array"
   ti, tf = _check_times(tr,Trange,Δt)
   _dt = sign(tf-ti)*abs(Δt)
 
+  u0 = _prepare_initial_conditions(X₀)
   vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
 
-  sol = ILMPostProcessing._solve_trajectory(vfcn!,X₀,Trange,_dt,alg;kwargs...)
-  return sol
+  sol = _solve_trajectory(vfcn!,u0,Trange,_dt,alg;kwargs...)
+
+  return Trajectories(sol)
   
 end
 
 
 
 """
-   compute_trajectory(vel::Edges,sys,X₀::Vector/Vector{Vector},Tmax[,Δt=0.001])
-
-Calculate the trajectory of a particle with initial location `X₀`. The argument
-`vel` is edge-type grid data, `sys` is a Navier-Stokes type system, `Trange` is a tuple of the initial and final time of integration (and the final time
-can be earlier than the initial time if backward trajectories are desired), and `Δt` is the time step size. The output is the solution
-structure for the `OrdinaryDiffEq` package.
-"""
-compute_trajectory(u::Edges, sys::ILMSystem, X₀::Union{Vector{S},Vector{Vector{S}}},Trange::Tuple;Δt=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where S <: Real =
-    compute_trajectory(interpolatable_field(u,sys.base_cache.g)...,X₀,Trange;Δt=Δt,alg=alg,kwargs...)
-
-
-
-"""
-   compute_trajectory(u,v,X₀::Vector,Trange::Tuple[,Δt=0.001])
+   compute_trajectory(u,v,X₀,Trange::Tuple[;Δt=0.01])
 
 Calculate the trajectory of a tracer particle with initial location(s) `X₀`, which
-can be specified as either a single vector `[x0,y0]` or a vector of vectors
+can be specified as either a single vector `[x0,y0]`, a vector of vectors specifying
+x, y pairs, or a tuple of vectors or arrays specifying x and y positions, respectively,
 for multiple tracer particles. The arguments
 `u` and `v` are either interpolated velocity field components from a computational solution
 or are functions. If they are functions, then each of them should be of the form `u(x,y,t)`
@@ -78,42 +115,56 @@ time step size, which defaults to 0.001. The output is the solution
 structure for the `OrdinaryDiffEq` package (or, for multiple particles, a vector
 of such solution structures).
 """
-function compute_trajectory(ufield::AbstractInterpolation{T,2},
-                            vfield::AbstractInterpolation{T,2},
-                            X₀::Vector{S},Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {T,S<:Real}
+function compute_trajectory(ufield::T,
+                            vfield::T,
+                            X₀,Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {T<:AbstractInterpolation}
 
-  
-  ti, tf = Trange
-  _dt = sign(tf-ti)*abs(Δt)
-
-  vfcn!(dR,R,p,t) = _vfcn_autonomous!(dR,R,p,t,ufield,vfield)
-
-  sol = _solve_trajectory(vfcn!,X₀,Trange,_dt,alg;kwargs...)
-  return sol
-
-end
-
-function compute_trajectory(ufield::T,vfield::T,
-   pts::Vector{Vector{S}},Trange::Tuple;Δt=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real,T<:Union{AbstractInterpolation,Function}}
-
-  sol_array = ODESolution[]
-  for X₀ in pts
-    sol = compute_trajectory(ufield,vfield,X₀,Trange;Δt=Δt,alg=alg,kwargs...)
-    push!(sol_array,sol)
-  end
-  return sol_array
+  u0 = _prepare_initial_conditions(X₀)
+  sol = _compute_trajectory(ufield,vfield,u0,Trange,Δt,alg;kwargs...)
+  return Trajectories(sol)
 
 end
 
 function compute_trajectory(ufcn::Function,
                             vfcn::Function,
-                            X₀::Vector{S},Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
+                            X₀,Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...)
 
   ti, tf = Trange
   _dt = sign(tf-ti)*abs(Δt)
-  velfcn(R,p,t) = _vfcn_nonautonomous(R,p,t,ufcn,vfcn)
+  velfcn(R,p,t) = _is_autonomous_velocity(ufcn) ? _vfcn_autonomous(R,p,t,ufcn,vfcn) : _vfcn_nonautonomous(R,p,t,ufcn,vfcn)
 
-  sol = _solve_trajectory(velfcn,X₀,Trange,_dt,alg;kwargs...)
+  u0 = _prepare_initial_conditions(X₀)
+  sol = _solve_trajectory(velfcn,u0,Trange,_dt,alg;kwargs...)
+
+  return Trajectories(sol)
+
+end
+
+
+
+#######
+
+function _compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple,Δt,alg;kwargs...) where T<:AbstractInterpolation
+  @assert length(vr) == length(tr) "Supplied time array must be same length as supplied velocity array"
+  ti, tf = _check_times(tr,Trange,Δt)
+  _dt = sign(tf-ti)*abs(Δt)
+
+  vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
+
+  sol = _solve_trajectory(vfcn!,X₀,Trange,_dt,alg;kwargs...)
+  return sol
+  
+end
+
+function _compute_trajectory(ufield::AbstractInterpolation{T,2},vfield::AbstractInterpolation{T,2},
+                              u0,Trange,Δt,alg;kwargs...) where {T}
+
+  ti, tf = Trange
+  _dt = sign(tf-ti)*abs(Δt)
+
+  vfcn!(dR,R,p,t) = _vfcn_autonomous!(dR,R,p,t,ufield,vfield)
+
+  sol = _solve_trajectory(vfcn!,u0,Trange,_dt,alg;kwargs...)
   return sol
 
 end
@@ -165,7 +216,7 @@ units before the current instant `t`. The time step size `Δt` sets the resoluti
 of the streakline (i.e., how often the particles are sampled along the streakline).
 It returns arrays of the x and y coordinates of the streakline.
 """
-function compute_streakline(u,v,X₀::Vector{S},t;τmin = t-3.0, Δtstreak::Real=DEFAULT_DT_STREAK, Δttraj::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
+function compute_streakline(u,v,X₀::Vector{S},t;τmin = t-DEFAULT_T_DURATION, Δtstreak::Real=DEFAULT_DT_STREAK, Δttraj::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
   τstreak = τmin:Δtstreak:t
   xstreak = zeros(length(τstreak))
   ystreak = zeros(length(τstreak))
@@ -190,11 +241,7 @@ is `deriv=0` (no derivative).
 field_along_trajectory(d::GridData,sys,traj;deriv=0) = _field_along_trajectory(d,sys,traj,Val(deriv))
 
 
-
-
 ## Internal helper functions ##
-
-
 
 function _solve_trajectory(vfcn,u0,Trange,Δt,alg; kwargs...)
   Path = ODEProblem(vfcn,u0,Trange)
@@ -206,21 +253,51 @@ function _solve_streamline(vfcn,u0,Trange,Δt,p,alg; kwargs...)
   sol = OrdinaryDiffEq.solve(Path,alg; dt = Δt, maxiters = 1e8, adaptive = false, dense = false, kwargs...)
 end
 
+## Right-hand side functions for trajectories ##
+
+function _vfcn_autonomous!(dR::ArrayPartition,R::ArrayPartition,p,t,u,v)
+ dR.x[1] .= u.(R.x[1],R.x[2])
+ dR.x[2] .= v.(R.x[1],R.x[2])
+
+ return dR
+end
 
 function _vfcn_autonomous!(dR,R,p,t,u,v)
- dR[1] = u(R[1],R[2])
- dR[2] = v(R[1],R[2])
+  dR[1] = u(R[1],R[2])
+  dR[2] = v(R[1],R[2])
+  return dR
+ end
+
+ function _vfcn_autonomous(R::ArrayPartition,p,t,u,v)
+  dR = similar(R)
+  dR.x[1] .= u.(R.x[1],R.x[2])
+  dR.x[2] .= v.(R.x[1],R.x[2])
+  return dR
+ end
+
+ function _vfcn_autonomous(R,p,t,u,v)
+  dR = similar(R)
+  dR[1] = u(R[1],R[2])
+  dR[2] = v(R[1],R[2])
+ 
+  return dR
+ end
+
+function _vfcn_nonautonomous(R::ArrayPartition,p,t,u,v)
+ dR = similar(R)
+ dR.x[1] .= u.(R.x[1],R.x[2],Ref(t))
+ dR.x[2] .= v.(R.x[1],R.x[2],Ref(t))
 
  return dR
 end
 
 function _vfcn_nonautonomous(R,p,t,u,v)
- dR = similar(R)
- dR[1] = u(R[1],R[2],t)
- dR[2] = v(R[1],R[2],t)
-
- return dR
-end
+  dR = similar(R)
+  dR[1] = u(R[1],R[2],t)
+  dR[2] = v(R[1],R[2],t)
+ 
+  return dR
+ end
 
 function _vfcn_nonautonomous_frozentime(R,p,t,u,v)
   dR = similar(R)
@@ -237,6 +314,8 @@ function _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
   dR.x[2] .= v.(R.x[1],R.x[2])
   return dR
 end
+
+## For computing fields along trajectories ##
 
 function _field_along_trajectory(v::VectorGridData,sys::ILMSystem,traj::ODESolution,::Val{0})
     vfield_x, vfield_y = interpolatable_field(v,sys.base_cache.g)
@@ -281,3 +360,25 @@ function _check_times(tr,Trange,Δt)
     return ti, tf
 end
        
+
+function _prepare_initial_conditions(X₀::Tuple)
+  x0, y0 = X₀
+  return ArrayPartition(deepcopy(x0),deepcopy(y0))
+end
+
+function _prepare_initial_conditions(X₀::Vector{Vector{S}}) where {S<:Real}
+  x0 = map(pt -> pt[1],X₀)
+  y0 = map(pt -> pt[2],X₀)
+  return ArrayPartition(x0,y0)
+end
+
+function _prepare_initial_conditions(X₀::Vector{S}) where {S<:Real}
+  return X₀
+end
+
+function _is_autonomous_velocity(u::Function)
+  m = first(methods(u))
+  # autonomous will have three (fcn name, x, y), non-autonomous will have four (time, as well)
+  is_aut = m.nargs == 3 ? true : false
+  return is_aut
+end
