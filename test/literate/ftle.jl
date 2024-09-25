@@ -70,7 +70,7 @@ t_start = 0.0
 t_end = 18.0
 dt = 0.01
 
-ILMPostProcessing.make_interp_fields!(u, v, t_start, t_end, dt, ViscousFlow.velocity, sol, sys, g)
+make_interp_fields!(u, v, t_start, t_end, dt, ViscousFlow.velocity, sol, sys, g)
 
 #=
 ## Generate Initial Conditions
@@ -82,7 +82,7 @@ Y_MIN = -2.0
 Y_MAX = 2.0
 nx, ny = 400, 400
 
-initial_conditions, dx, dy = ILMPostProcessing.gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
+initial_conditions, dx, dy = gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
 
 #=
 ## Solve the IVP and Generate FTLE Fields
@@ -94,14 +94,14 @@ FTLE = zeros(Float64, ny - 2, nx - 2)
 T = 6.0
 t0 = 6.0
 
-w = ILMPostProcessing.euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
-z = ILMPostProcessing.euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
+w = euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
+z = euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
 
 FTLE_forward = zeros(Float64, ny - 2, nx - 2)
-ILMPostProcessing.compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
+compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
 
 FTLE_backward = zeros(Float64, ny - 2, nx - 2)
-ILMPostProcessing.compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
+compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
 
 x = range(X_MIN + dx, stop = X_MAX - dx, length=nx - 2)
 y = range(Y_MIN + dy, stop = Y_MAX - dy, length=ny - 2)
@@ -123,7 +123,7 @@ y_min = 0.5
 y_max = 1.5
 nx_p, ny_p = 10, 10
 
-initial_points, dx_p, dy_p = ILMPostProcessing.gen_init_conds(x_min, x_max, y_min, y_max, nx_p, ny_p)
+initial_points, dx_p, dy_p = gen_init_conds(x_min, x_max, y_min, y_max, nx_p, ny_p)
 
 FTLE = zeros(Float64, ny - 2, nx - 2)
 T = 6.0
@@ -134,16 +134,16 @@ The code here creates a gif
     @gif for t0 in 6.0:0.5:12.0
         print(t0)
     
-        points = ILMPostProcessing.euler_forward(initial_points, u, v, 6.0, t_start, dt, t0 - 6.0)
+        points = euler_forward(initial_points, u, v, 6.0, t_start, dt, t0 - 6.0)
     
-        w = ILMPostProcessing.euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
-        z = ILMPostProcessing.euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
+        w = euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
+        z = euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
     
         FTLE_forward = zeros(Float64, ny - 2, nx - 2)
-        ILMPostProcessing.compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
+        compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
     
         FTLE_backward = zeros(Float64, ny - 2, nx - 2)
-        ILMPostProcessing.compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
+        compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
     
         x = range(X_MIN + dx, stop = X_MAX - dx, length=nx - 2)
         y = range(Y_MIN + dy, stop = Y_MAX - dy, length=ny - 2)
@@ -159,5 +159,11 @@ The code here creates a gif
 
 #md # ## FTLE functions
 #md # ```@docs
+#md # make_interp_fields!
+#md # gen_init_conds
+#md # euler_forward
+#md # euler_backward
+#md # adams_bashforth_2_forward
+#md # adams_bashforth_2_backward
 #md # compute_FTLE!
 #md # ```
