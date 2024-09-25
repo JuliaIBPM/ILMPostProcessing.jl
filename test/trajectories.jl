@@ -34,6 +34,10 @@ using LinearAlgebra
 
     @test length(traj.xhistory[end]) == length(traj.yhistory[end]) == length(pts)
    
+    tsline = integrator.t
+    sline = compute_streamline(velfcn...,pts,(0,12),tsline,alg=Tsit5())
+
+
     t_start = 0.0
     t_end = 1.0
     dt = timestep(u0,sys)
@@ -72,6 +76,13 @@ end
     @test typeof(traj.xhistory)<:Vector && typeof(traj.yhistory)<:Vector
 
     x1, y1 = traj[1]
-    @test norm(2 .- cos.(traj.t) .- y1) < 1e-10
+    @test norm(pts[1][2] .+ 1.0 .- cos.(traj.t) .- y1) < 1e-10
+
+
+    tsline = π
+    sline = compute_streamline(ufcn2,vfcn2,pts,(0,10),tsline,alg=Tsit5())
+    x1, y1 = sline[2]
+    @test norm(y1 .- pts[2][2]) < 1e-10
+
 
 end
