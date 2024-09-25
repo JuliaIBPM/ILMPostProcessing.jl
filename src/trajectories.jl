@@ -87,7 +87,8 @@ structure for the `OrdinaryDiffEq` package.
 function compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple;Δt::Real=step(tr),alg=DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
   @assert length(vr) == length(tr) "Supplied time array must be same length as supplied velocity array"
   ti, tf = _check_times(tr,Trange,Δt)
-  _dt = sign(tf-ti)*abs(Δt)
+  tsign = sign(tf-ti)
+  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
 
   u0 = _prepare_initial_conditions(X₀)
   vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
@@ -130,7 +131,9 @@ function compute_trajectory(ufcn::Function,
                             X₀,Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...)
 
   ti, tf = Trange
-  _dt = sign(tf-ti)*abs(Δt)
+  tsign = sign(tf-ti)
+  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
+
   velfcn(R,p,t) = _is_autonomous_velocity(ufcn) ? _vfcn_autonomous(R,p,t,ufcn,vfcn) : _vfcn_nonautonomous(R,p,t,ufcn,vfcn)
 
   u0 = _prepare_initial_conditions(X₀)
@@ -146,8 +149,8 @@ end
 
 function _compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple,Δt,alg;kwargs...) where T<:AbstractInterpolation
   @assert length(vr) == length(tr) "Supplied time array must be same length as supplied velocity array"
-  ti, tf = _check_times(tr,Trange,Δt)
-  _dt = sign(tf-ti)*abs(Δt)
+  tsign = sign(tf-ti)
+  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
 
   vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
 
@@ -160,7 +163,8 @@ function _compute_trajectory(ufield::AbstractInterpolation{T,2},vfield::Abstract
                               u0,Trange,Δt,alg;kwargs...) where {T}
 
   ti, tf = Trange
-  _dt = sign(tf-ti)*abs(Δt)
+  tsign = sign(tf-ti)
+  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
 
   vfcn!(dR,R,p,t) = _vfcn_autonomous!(dR,R,p,t,ufield,vfield)
 
@@ -223,14 +227,15 @@ function compute_streakline(u,v,X₀::Vector{S},t;τmin = t-DEFAULT_T_DURATION, 
 
   for (i,τ) in enumerate(τstreak)
     traj = compute_trajectory(u,v,X₀,(τ,t);Δt = Δttraj,alg=alg,kwargs...)
-    xstreak[i], ystreak[i] = traj.u[end]
+    xtraj, ytraj = traj[1]
+    xstreak[i], ystreak[i] = xtraj[end],ytraj[end]
   end
-  return xstreak, ystreak
+  return Trajectories(1,τstreak,xstreak,ystreak)
 end
 
 
 """
-  field_along_trajectory(f::GridData,sys::NavierStokes,traj::ODESolution[,deriv=0])
+  field_along_trajectory(f::GridData,sys::NavierStokes,traj::Trajectories[,deriv=0])
 
 Evaluate field `f` (given as grid data) along the trajectory specified by `traj`.
 The output is the history of `f` along this trajectory. If `f` is a vector field,
@@ -334,36 +339,38 @@ end
 
 ## For computing fields along trajectories ##
 
-function _field_along_trajectory(v::VectorGridData,sys::ILMSystem,traj::ODESolution,::Val{0})
+function _field_along_trajectory(v::VectorGridData,sys::ILMSystem,traj::Trajectories,::Val{0})
     vfield_x, vfield_y = interpolatable_field(v,sys.base_cache.g)
    
     vx_traj = eltype(v)[]
     vy_traj = eltype(v)[]
-    for x in traj.u
-      push!(vx_traj,vfield_x(x...))
-      push!(vy_traj,vfield_y(x...))
+    xh, yh = traj[1]
+    for (x,y) in zip(xh,yh)
+      push!(vx_traj,vfield_x(x,y))
+      push!(vy_traj,vfield_y(x,y))
     end
    
     return vx_traj, vy_traj
 end
    
-function _field_along_trajectory(s::ScalarGridData,sys::ILMSystem,traj::ODESolution,::Val{0})
+function _field_along_trajectory(s::ScalarGridData,sys::ILMSystem,traj::Trajectories,::Val{0})
     sfield = interpolatable_field(s,sys.base_cache.g)
    
     s_traj = eltype(sfield)[]
-    for x in traj.u
-      push!(s_traj,sfield(x...))
+    xh, yh = traj[1]
+    for (x,y) in zip(xh,yh)
+      push!(s_traj,sfield(x,y))
     end
    
     return s_traj
 end
    
-function _field_along_trajectory(v::VectorGridData,sys::ILMSystem,traj::ODESolution,::Val{1})
+function _field_along_trajectory(v::VectorGridData,sys::ILMSystem,traj::Trajectories,::Val{1})
        utraj, vtraj = _field_along_trajectory(v,sys,traj,Val(0))
        return ddt(utraj,traj.t), ddt(vtraj,traj.t)
 end
    
-_field_along_trajectory(s::ScalarGridData,sys::ILMSystem,traj::ODESolution,::Val{1}) =
+_field_along_trajectory(s::ScalarGridData,sys::ILMSystem,traj::Trajectories,::Val{1}) =
        ddt(_field_along_trajectory(s,sys,traj,Val(0)),traj.t)
    
 
