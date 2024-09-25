@@ -170,10 +170,11 @@ function _compute_trajectory(ufield::AbstractInterpolation{T,2},vfield::Abstract
 end
 
 """
-   compute_streamline(u,v,X₀::Vector,srange::Tuple,t::Real,[,Δt=0.001])
+   compute_streamline(u,v,X₀,srange::Tuple,t::Real,[;Δt=0.01])
 
 Calculate the streamline(s) passing through location(s) `X₀`, which
-can be specified as either a single vector `[x0,y0]` or a vector of vectors
+can be specified as either a single vector `[x0,y0]`, a vector of vectors specifying
+x, y pairs, or a tuple of vectors or arrays specifying x and y positions, respectively,
 for a rake of streamlines. The arguments
 `u` and `v` are either interpolated velocity field components from a computational solution
 or are functions. If they are functions, then each of them should be of the form `u(x,y,t)`
@@ -185,24 +186,23 @@ of such solution structures).
 """
 function compute_streamline(ufcn::Function,
                             vfcn::Function,
-                            X₀::Vector{S},srange::Tuple,t::Real;Δs::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
+                            X₀,srange::Tuple,t::Real;Δs::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...)
 
-  velfcn(R,p,s) = _vfcn_nonautonomous_frozentime(R,p,s,ufcn,vfcn)
+  velfcn(R,p,s) = _is_autonomous_velocity(ufcn) ? _vfcn_autonomous(R,p,s,ufcn,vfcn) : _vfcn_nonautonomous_frozentime(R,p,s,ufcn,vfcn)
 
-  sol = _solve_streamline(velfcn,X₀,srange,Δs,t,alg;kwargs...)
-  return sol
+  u0 = _prepare_initial_conditions(X₀)
+  sol = _solve_streamline(velfcn,u0,srange,Δs,t,alg;kwargs...)
+  return Trajectories(sol)
 
 end
 
-function compute_streamline(ufield,vfield,
-   pts::Vector{Vector{S}},srange::Tuple,t::Real;Δs=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
+function compute_streamline(ufield::AbstractInterpolation{T,2},vfield::AbstractInterpolation{T,2},
+      X₀,srange::Tuple,t::Real;Δs=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {T}
 
-  sol_array = ODESolution[]
-  for X₀ in pts
-    sol = compute_streamline(ufield,vfield,X₀,srange,t;Δs=Δs,alg=alg,kwargs...)
-    push!(sol_array,sol)
-  end
-  return sol_array
+   vfcn!(dR,R,p,s) = _vfcn_autonomous!(dR,R,p,s,ufield,vfield)
+   u0 = _prepare_initial_conditions(X₀)
+   sol = _solve_streamline(vfcn!,u0,srange,Δs,t,alg;kwargs...)
+   return Trajectories(sol)
 
 end
 
@@ -299,19 +299,36 @@ function _vfcn_nonautonomous(R,p,t,u,v)
   return dR
  end
 
-function _vfcn_nonautonomous_frozentime(R,p,t,u,v)
-  dR = similar(R)
-  dR[1] = u(R[1],R[2],p)
-  dR[2] = v(R[1],R[2],p)
 
- return dR
+ function _vfcn_nonautonomous_frozentime(R::ArrayPartition,p,t,u,v)
+  dR = similar(R)
+  dR.x[1] .= u.(R.x[1],R.x[2],Ref(p))
+  dR.x[2] .= v.(R.x[1],R.x[2],Ref(p))
+ 
+  return dR
+ end
+ 
+ function _vfcn_nonautonomous_frozentime(R,p,t,u,v)
+   dR = similar(R)
+   dR[1] = u(R[1],R[2],p)
+   dR[2] = v(R[1],R[2],p)
+  
+   return dR
+  end
+
+function _vfcn_interpolated_series!(dR::ArrayPartition,R::ArrayPartition,p,t,vr,tr)
+  jr = searchsortedfirst(tr,t)
+  u, v = vr[jr]
+  dR.x[1] .= u.(R.x[1],R.x[2])
+  dR.x[2] .= v.(R.x[1],R.x[2])
+  return dR
 end
 
 function _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
   jr = searchsortedfirst(tr,t)
   u, v = vr[jr]
-  dR.x[1] .= u.(R.x[1],R.x[2])
-  dR.x[2] .= v.(R.x[1],R.x[2])
+  dR[1] = u(R[1],R[2])
+  dR[2] = v(R[1],R[2])
   return dR
 end
 
