@@ -3,13 +3,19 @@ module ILMPostProcessing
 using ImmersedLayers
 using LinearAlgebra
 using Statistics
+using OrdinaryDiffEq
 
-export pod, dmd, PODModes, DMDModes, make_interp_fields!, gen_init_conds, euler_forward, euler_backward, adams_bashforth_2_forward, adams_bashforth_2_backward, compute_FTLE!
+export pod, dmd, PODModes, DMDModes, compute_FTLE!, compute_trajectory,
+        compute_streamline, compute_streakline, displacement_field, Trajectories,
+        field_along_trajectory
 
 include("utilities.jl")
+include("trajectories.jl")
 include("POD.jl")
 include("DMD.jl")
 include("FTLE.jl")
+
+include("plot_recipes.jl")
 
 
 end # module ILMPostProcessing

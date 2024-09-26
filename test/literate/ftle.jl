@@ -41,7 +41,7 @@ plot(vorticity(u0,sys,0.0),sys)
 Step the integrator repeatedly until the solution is generated for t = (0.0, 18.0).
 =#
 
-T = 18.0
+T = 19.0
 tspan = (0.0,T)
 integrator = init(u0,tspan,sys)
 
@@ -51,12 +51,11 @@ end
 
 sol = integrator.sol
 
-plt = plot(layout = (5,5), size = (800, 800), legend=:false)
+plt = plot(layout = (4,5), size = (800, 800), legend=:false)
 tsnap = 0.0:1.0:T
 for (i, t) in enumerate(tsnap)
     plot!(plt[i],vorticity(sol,sys,t),sys,levels=range(0.1,5,length=31))
 end
-savefig(plt,"CoRotating.pdf")
 plt
 
 #=
@@ -64,96 +63,129 @@ plt
 This step stores the velocity fields as interpolatable fields at chosen time steps so that the velocity fields don't need to be computed every iteration the IVP is solved.
 =#
 
-u = []
-v = []
 t_start = 0.0
-t_end = 18.0
-dt = 0.01
+t_end = 19.0
+dt = timestep(u0,sys)
+tr = t_start:dt:t_end
 
-make_interp_fields!(u, v, t_start, t_end, dt, ViscousFlow.velocity, sol, sys, g)
+velxy = velocity_xy(sol,sys,tr);
 
 #=
 ## Generate Initial Conditions
+Here, we generate a grid of initial locations from which to integrate
+trajectories.
 =#
 
 X_MIN = -2.0
 X_MAX = 2.0
 Y_MIN = -2.0
 Y_MAX = 2.0
-nx, ny = 400, 400
-
-initial_conditions, dx, dy = gen_init_conds(X_MIN, X_MAX, Y_MIN, Y_MAX, nx, ny)
+dx = 0.01
+ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx,optimize=false)
+ftle_cache = SurfaceScalarCache(ftlegrid)
+x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
 
 #=
 ## Solve the IVP and Generate FTLE Fields
 ### Computing the FTLE Field at One Time Snapshot
-Forward Euler's method is used here, but can also use ILMPostProcessing.adams_bashforth_2_forward. 
+To compute the particle displacement field, we choose an integration time `T`.
+We also choose a time `t0` at which we desire to see the FTLE field. Note
+that we will compute both a forward and backward time FTLE field at `t0`, so
+we need to ensure we have velocity data available from `t0 - T` to `t0 + T`. 
+
+For integration purposes we use the forward Euler method, but any time marching
+method can be used.
 =#
 
-FTLE = zeros(Float64, ny - 2, nx - 2)
 T = 6.0
 t0 = 6.0
 
-w = euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
-z = euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
+#=
+The forward displacement field and FTLE field
+=#
+xf, yf = displacement_field(velxy,tr,x0,y0,(t0,t0+T),alg=Euler())
 
-FTLE_forward = zeros(Float64, ny - 2, nx - 2)
-compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
-
-FTLE_backward = zeros(Float64, ny - 2, nx - 2)
-compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
-
-x = range(X_MIN + dx, stop = X_MAX - dx, length=nx - 2)
-y = range(Y_MIN + dy, stop = Y_MAX - dy, length=ny - 2)
-
-contour(x, y, FTLE_forward, fill=false, title="FTLE, t = $t0", xlabel="x", ylabel="y", colorbar=false, c=:inferno, ratio = 1, xlim = (-2, 2), ylim = (-2, 2), size = (800, 800), label = "Forward FTLE", legend=:topright)
-contour!(x, y, FTLE_backward, fill=false, colorbar=false, c=:viridis)
-
-plot!([], [], label="Forward FTLE", linecolor=:orange)
-plot!([], [], label="Backward FTLE", linecolor=:green)
+fFTLE = similar(x0)
+compute_FTLE!(fFTLE,xf,yf,dx,dx,T)
 
 #=
-### Computing the FTLE Fields at a Range of Times and Generate GIF
-Also advances the trajectories of a group of points. The first example places initial points near the unstable manifold (orange).
+and now the backward displacement field and FTLE field. We don't actually
+need to specify the `alg` because `Euler()` is the default.
 =#
+xb, yb = displacement_field(velxy,tr,x0,y0,(t0,t0-T))
 
-x_min = -1.0
-x_max = 0.0
-y_min = 0.5
-y_max = 1.5
-nx_p, ny_p = 10, 10
+bFTLE = similar(x0)
+compute_FTLE!(bFTLE,xb,yb,dx,dx,T);
 
-initial_points, dx_p, dy_p = gen_init_conds(x_min, x_max, y_min, y_max, nx_p, ny_p)
 
-FTLE = zeros(Float64, ny - 2, nx - 2)
-T = 6.0
+#=
+Plot the fields on top of each other
+=#
+plot(fFTLE,ftle_cache,color=:inferno,size=(800,800))
+plot!(bFTLE,ftle_cache,color=:viridis,xlim=(-2,2),ylim=(-2,2),title="FTLE, t = $t0", xlabel="x", ylabel="y")
+
+#=
+### Computing the FTLE Fields at a Range of Times
+Let's see some blocks of particles and how they move as the FTLE field evolves.
+The example places initial points at `t = 6` near the unstable manifold (orange).
+We will compute the FTLE field after 4 time units (`t = 10`) and see the particles.
+The initial block of points is roughly colored according to which side of this
+manifold it is on.
+=#
+xp_min = -1.0
+xp_max = 0.0
+yp_min = 0.5
+yp_max = 1.5
+dxp = 0.1
+p_grid = PhysicalGrid((xp_min,xp_max),(yp_min,yp_max),dxp,optimize=false)
+p_cache = SurfaceScalarCache(p_grid);
+xp0, yp0 = x_grid(p_cache), y_grid(p_cache);
+
+plot(fFTLE,ftle_cache,color=:inferno,size=(800,800))
+plot!(bFTLE,ftle_cache,color=:viridis,xlim=(-2,2),ylim=(-2,2),title="FTLE, t = $t0", xlabel="x", ylabel="y")
+scatter!(vec(xp0[1:5,1:end]),vec(yp0[1:5,1:end]))
+scatter!(vec(xp0[8:end,1:end]),vec(yp0[8:end,1:end]))
+
+#=
+Now we will advance the block of particles to `t = 10` and compute the FTLE fields
+at that instant.
+=#
+t0_ftle = 10.0
+xpf, ypf = displacement_field(velxy,tr,xp0,yp0,(t0,t0_ftle))
+
+xf, yf = displacement_field(velxy,tr,x0,y0,(t0_ftle,t0_ftle+T))
+compute_FTLE!(fFTLE,xf,yf,dx,dx,T)
+
+xb, yb = displacement_field(velxy,tr,x0,y0,(t0_ftle,t0_ftle-T))
+compute_FTLE!(bFTLE,xb,yb,dx,dx,T);
+
+
+#=
+Now plot the FTLE fields and particles
+=#
+plot(fFTLE,ftle_cache,color=:inferno,size=(800,800))
+plot!(bFTLE,ftle_cache,color=:viridis,xlim=(-2,2),ylim=(-2,2),title="FTLE, t = $t0_ftle", xlabel="x", ylabel="y")
+scatter!(vec(xpf[1:5,1:end]),vec(ypf[1:5,1:end]))
+scatter!(vec(xpf[8:end,1:end]),vec(ypf[8:end,1:end]))
 
 #=
 The code here creates a gif
 
-    @gif for t0 in 6.0:0.5:12.0
-        print(t0)
+    @gif for t0_ftle in 6.5:0.5:12.0
+        print(t0_ftle)
     
-        points = euler_forward(initial_points, u, v, 6.0, t_start, dt, t0 - 6.0)
+        xpf, ypf = displacement_field(velxy,tr,xp0,yp0,(t0,t0_ftle))
+
+        xf, yf = displacement_field(velxy,tr,x0,y0,(t0_ftle,t0_ftle+T))
+        compute_FTLE!(fFTLE,xf,yf,dx,dx,T)
+        xb, yb = displacement_field(velxy,tr,x0,y0,(t0_ftle,t0_ftle-T))
+        compute_FTLE!(bFTLE,xb,yb,dx,dx,T)
     
-        w = euler_forward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from forward integration
-        z = euler_backward(initial_conditions, u, v, t0, t_start, dt, T); # final trajectories from backward integration
+        plot(fFTLE,ftle_cache,color=:inferno,size=(800,800))
+        plot!(bFTLE,ftle_cache,color=:viridis,xlim=(-2,2),ylim=(-2,2),title="FTLE, t = $t0_ftle", xlabel="x", ylabel="y")
+        scatter!(vec(xpf[1:5,1:end]),vec(ypf[1:5,1:end]))
+        scatter!(vec(xpf[8:end,1:end]),vec(ypf[8:end,1:end]))
     
-        FTLE_forward = zeros(Float64, ny - 2, nx - 2)
-        compute_FTLE!(FTLE_forward, nx, ny, T, w, dx, dy);
-    
-        FTLE_backward = zeros(Float64, ny - 2, nx - 2)
-        compute_FTLE!(FTLE_backward, nx, ny, T, z, dx, dy);
-    
-        x = range(X_MIN + dx, stop = X_MAX - dx, length=nx - 2)
-        y = range(Y_MIN + dy, stop = Y_MAX - dy, length=ny - 2)
-    
-        contour(x, y, FTLE_forward, fill=false, title="FTLE, t = $t0", xlabel="x", ylabel="y", colorbar=false, c=:inferno, xlim = (-2, 2), ylim = (-2, 2), ratio = 1, size = (800, 800))
-        contour!(x, y, FTLE_backward, fill=false, colorbar=false, c=:viridis)
-    
-        plot!([], [], label="Forward FTLE", linecolor=:orange)
-        plot!([], [], label="Backward FTLE", linecolor=:green)
-        scatter!(points[:,1], points[:,2], label = "Points", markercolor=:black, legend=:topright)
     end every 1 fps = 2
 =#
 
