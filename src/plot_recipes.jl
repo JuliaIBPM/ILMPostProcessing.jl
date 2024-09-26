@@ -18,6 +18,7 @@ using ColorTypes
   end
 end
 
+#=
 @recipe function f(traj::Trajectories,sys::ILMSystem)
 
   xguide --> "x"
@@ -33,8 +34,9 @@ end
   end
   
 end
+=#
 
-
+#=
 @userplot FieldTrajectory
 
 @recipe function f(h::FieldTrajectory;fieldlabel="Field",deriv=0)
@@ -57,6 +59,7 @@ end
     traj
   end
 
+  
   if length(sys) > 0
     body = surfaces(sys)[1]
     @series begin
@@ -120,5 +123,5 @@ end
   end
 
 end
-
+=#
 
