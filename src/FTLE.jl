@@ -274,3 +274,52 @@ function compute_FTLE!(FTLE, nx, ny, T, final_positions, dx, dy)
     # Compute FTLE (same slicing approach to match the dimensions)
     FTLE .= 1 / (2 * abs(T)) .* log.(lambda)
 end
+
+
+"""
+    compute_FTLE!(FTLE::ScalarGridData, final_x::ScalarGridData, final_y::ScalarGridData, dx::Real, dy::Real, T::Real)
+
+Compute the `FTLE` field given the final positions of initial points on a collocated grid. 
+
+The underlying math is detailed in: https://shaddenlab.berkeley.edu/uploads/LCS-tutorial/computation.html. For each grid point, first compute the gradient of the flow map using two point central differencing. Then, calculate the maximum eigenvalue of the 2 x 2 gradient matrix. Finally, compute the FTLE value using the eigenvalue.
+
+# Arguments
+- `FTLE`: will hold the FTLE field, in `ScalarGridData` type
+- `final_x`: deformed x positions, in `ScalarGridData` type
+- `final_y`: deformed y positions, in `ScalarGridData` type 
+- `dx`: spacing of initial grids in x 
+- `dy`: spacing of initial grids in y 
+- `T`: length of integration time
+"""
+function compute_FTLE!(FTLE::ScalarGridData, final_x::ScalarGridData, final_y::ScalarGridData, dx::Real, dy::Real, T::Real)
+
+    nx, ny = size(final_x)
+    # Shifted arrays for vector operations
+    final_x_i_minus = view(final_x,2:nx-1, 1:ny-2)
+    final_x_i_plus  = view(final_x,2:nx-1, 3:ny)
+    final_x_j_minus = view(final_x,1:nx-2, 2:ny-1)
+    final_x_j_plus  = view(final_x,3:nx, 2:ny-1)
+
+    final_y_i_minus = view(final_y,2:nx-1, 1:ny-2)
+    final_y_i_plus  = view(final_y,2:nx-1, 3:ny)
+    final_y_j_minus = view(final_y,1:nx-2, 2:ny-1)
+    final_y_j_plus  = view(final_y,3:nx, 2:ny-1)
+
+    # Compute the elements of the deformation gradient tensor A
+    a11 = (final_x_i_plus - final_x_i_minus) / 2 / dx
+    a12 = (final_x_j_plus - final_x_j_minus) / 2 / dy
+    a21 = (final_y_i_plus - final_y_i_minus) / 2 / dx
+    a22 = (final_y_j_plus - final_y_j_minus) / 2 / dy
+
+    # Compute the components of delta matrix = A' * A
+    a = a11.^2 .+ a21.^2
+    b = a11 .* a12 .+ a21 .* a22
+    c = a12.^2 .+ a22.^2
+
+    # Eigenvalues of the delta matrix using characteristic equation
+    lambda = (a .+ c .+ sqrt.((a .- c).^2 .+ 4 .* b.^2)) ./ 2
+
+    # Compute FTLE (same slicing approach to match the dimensions)
+    FTLE_center = view(FTLE,2:nx-1,2:ny-1)
+    FTLE_center .= 1 / (2 * abs(T)) .* log.(lambda)
+end
