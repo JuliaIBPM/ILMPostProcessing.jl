@@ -235,15 +235,16 @@ end
 
 
 """
-  field_along_trajectory(f,traj::Trajectories[,deriv=0])
+  field_along_trajectory(f,traj::Trajectories,p::Integer[,deriv=0])
 
-Evaluate field `f` (given as grid data) along the trajectory specified by `traj`.
+Evaluate field `f` (given as grid data) along the trajectory number `p` in the 
+trajectories specified by `traj`.
 The output is the history of `f` along this trajectory. If `f` is a vector field,
 then the component histories are output as a tuple. If `deriv=1`, then it
 computes the time derivative of the field along the trajectory. The default
 is `deriv=0` (no derivative).
 """
-field_along_trajectory(d,traj;deriv=0) = _field_along_trajectory(d,traj,Val(deriv))
+field_along_trajectory(d,traj,p;deriv=0) = _field_along_trajectory(d,traj,p,Val(deriv))
 
 
 ## Internal helper functions ##
@@ -339,12 +340,12 @@ end
 
 ## For computing fields along trajectories ##
 
-function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,::Val{0}) where T<:AbstractInterpolation
+function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{0}) where T<:AbstractInterpolation
     vfield_x, vfield_y = v
    
-    vx_traj = eltype(v)[]
-    vy_traj = eltype(v)[]
-    xh, yh = traj[1]
+    vx_traj = eltype(vfield_x)[]
+    vy_traj = eltype(vfield_y)[]
+    xh, yh = traj[p]
     for (x,y) in zip(xh,yh)
       push!(vx_traj,vfield_x(x,y))
       push!(vy_traj,vfield_y(x,y))
@@ -353,10 +354,10 @@ function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,::Val{0}) wher
     return vx_traj, vy_traj
 end
    
-function _field_along_trajectory(s::T,traj::Trajectories,::Val{0}) where T<:AbstractInterpolation
+function _field_along_trajectory(sfield::T,traj::Trajectories,p,::Val{0}) where T<:AbstractInterpolation
    
     s_traj = eltype(sfield)[]
-    xh, yh = traj[1]
+    xh, yh = traj[p]
     for (x,y) in zip(xh,yh)
       push!(s_traj,sfield(x,y))
     end
@@ -364,13 +365,13 @@ function _field_along_trajectory(s::T,traj::Trajectories,::Val{0}) where T<:Abst
     return s_traj
 end
    
-function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,::Val{1}) where T<:AbstractInterpolation
-       utraj, vtraj = _field_along_trajectory(v,traj,Val(0))
+function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{1}) where T<:AbstractInterpolation
+       utraj, vtraj = _field_along_trajectory(v,traj,p,Val(0))
        return ddt(utraj,traj.t), ddt(vtraj,traj.t)
 end
    
-_field_along_trajectory(s::T,traj::Trajectories,::Val{1}) where T<:AbstractInterpolation =
-       ddt(_field_along_trajectory(s,traj,Val(0)),traj.t)
+_field_along_trajectory(s::T,traj::Trajectories,p,::Val{1}) where T<:AbstractInterpolation =
+       ddt(_field_along_trajectory(s,traj,p,Val(0)),traj.t)
    
 
 function _check_times(tr,Trange,Δt)
