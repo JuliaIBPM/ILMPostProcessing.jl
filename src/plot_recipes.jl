@@ -2,14 +2,17 @@ using RecipesBase
 using ColorTypes
 #import PlotUtils: cgrad, palette, color_list
 
-@recipe function f(traj::Trajectories)
+@recipe function f(traj::Trajectories; idxs=1:traj.np)
 
   xguide --> "x"
   yguide --> "y"
   aspect_ratio := 1
   size --> (700,400)
+  if !isa(idxs,AbstractVector{<:Int})
+    error("plist must be an AbstractVector of integers")
+  end
 
-  for jt in 1:traj.np
+  for jt in idxs
       @series begin
         linewidth --> 2
         label --> "particle $jt"
