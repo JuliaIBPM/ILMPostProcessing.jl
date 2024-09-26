@@ -1,6 +1,6 @@
 #=
 # Dynamic mode decomposition (DMD)
-In this example, we will demonstrate the use of dynamic mode decomposition (DMD) for
+In this example, we will demonstrate the use of the de-biased form of dynamic mode decomposition (DMD) for
 decomposing a simple linear dynamical system.
 
 This example is inspired from example 1 of
@@ -9,6 +9,8 @@ M.S. Hemati, C.W. Rowley, E.A. Deem, and L.N. Cattafesta
    ``De-biasing the dynamic mode decomposition for 
      applied Koopman spectral analysis of noisy datasets,''
      Theoretical and Computational Fluid Dynamics (2017).
+
+which introduces the de-biased form of DMD.
 
 The example considers a low-rank linear system with 
 two undamped modes and one dampled mode. The snapshots taken from the
@@ -31,7 +33,7 @@ n = 250 # number of states
 r = 6 # rank of DMD
 dt = 0.01 # snapshot time step
 meas_cov = 0.05 # measurement noise covariance
-init_cov = 0.1 # initial condition covariance
+init_cov = 0.1; # initial condition covariance
 
 #=
 Specify characteristic frequencies and growth/decay rates
@@ -40,7 +42,7 @@ The DMD rank should be set equal to twice the number of modes
 (since each mode consists of conjugate pairs)
 =#
 f = [1.0, 2.5, 5.5]
-g = [0, 0, -0.3]
+g = [0, 0, -0.3];
 
 #=
 Create the right hand side matrix for the continuous linear system
@@ -76,7 +78,9 @@ sol = solve(prob,Tsit5(),saveat=dt);
 
 #=
 For DMD, use the solution snapshots, but
-randomly rotate them and apply noise to each
+randomly rotate them and apply noise to each.
+(Here, by performing a QR decomposition of a matrix with random entries,
+Q is a random unitary matrix)
 =#
 Q, _ = qr(randn(n,k))
 getsnaps(x) = Q*x .+ sqrt(meas_cov)*randn(n)
@@ -88,10 +92,10 @@ Now perform DMD
 =#
 dmdmodes = dmd(snaps,r)
 
-#!jl scatter(real(true_evals),imag(true_evals),ratio=1,xlim = (0.7,1.1),ylim=(0,0.4))
-#!jl scatter!(real(dmdmodes.evals),imag(dmdmodes.evals))
+#!jl scatter(real(true_evals),imag(true_evals),ratio=1,xlim = (0.7,1.1),ylim=(0,0.4), xlabel="\$Re(\\mu)\$", ylabel="\$Im(\\mu)\$",label="True")
+#!jl scatter!(real(dmdmodes.evals),imag(dmdmodes.evals),label="DMD")
 #!jl θ = range(0,2π,length=100);
-#!jl plot!(cos.(θ),sin.(θ))
+#!jl plot!(cos.(θ),sin.(θ),label="")
 
 #=
 ### Compare the true and DMD-computed eigenvalues
