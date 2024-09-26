@@ -32,8 +32,6 @@ using LinearAlgebra
     velxy = velocity_xy(sol,sys,tr)
     u, v = velxy[end]
 
-    #ILMPostProcessing.make_interp_fields!(u, v, t_start, t_end, dt, ViscousFlow.velocity, sol, sys, g)
-
     @test norm(u) < 1e-8
     @test norm(v) < 1e-8
 
