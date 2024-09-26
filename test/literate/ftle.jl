@@ -191,5 +191,11 @@ The code here creates a gif
 
 #md # ## FTLE functions
 #md # ```@docs
+#md # make_interp_fields!
+#md # gen_init_conds
+#md # euler_forward
+#md # euler_backward
+#md # adams_bashforth_2_forward
+#md # adams_bashforth_2_backward
 #md # compute_FTLE!
 #md # ```
