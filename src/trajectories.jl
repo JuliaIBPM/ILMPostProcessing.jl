@@ -1,7 +1,7 @@
 # TRAJECTORY CALCULATION #
 
-import ImmersedLayers.CartesianGrids.Interpolations: AbstractInterpolation
-import ImmersedLayers.ConstrainedSystems.RecursiveArrayTools: ArrayPartition 
+import Interpolations: AbstractInterpolation
+import RecursiveArrayTools: ArrayPartition 
 
 const DEFAULT_DT = 0.01
 const DEFAULT_DT_STREAK = 0.01
@@ -57,13 +57,13 @@ end
 
 
 """
-    displacement_field(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,x0::ScalarGridData,y0::ScalarGridData,Trange::Tuple[;Δt=step(tr),alg=Euler()])
+    displacement_field(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,x0,y0,Trange::Tuple[;Δt=step(tr),alg=Euler()])
 
 Calculate the displacement of particles initally at coordinates `x0` and `y0` over the range of times `Trange = (ti,tf)`, using the vector of spatially-interpolated
 velocity fields in `vr` (with corresponding times `tr`). The final time in `Trange` can be earlier than the initial time if backward trajectories are desired.
 The optional keyword arguments are `Δt`, the time step size (which defaults to the step size in `tr`, but could be an integer multiple larger than 1). 
 """
-function displacement_field(vr::Vector{Tuple{T,T}},tr::StepRangeLen,x0::ScalarGridData,y0::ScalarGridData,Trange::Tuple;Δt::Real=step(tr),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
+function displacement_field(vr::Vector{Tuple{T,T}},tr::StepRangeLen,x0,y0,Trange::Tuple;Δt::Real=step(tr),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
   ti, tf = Trange
   traj = compute_trajectory(vr,tr,(x0,y0),Trange,alg=Euler(),saveat=[tf])
 
@@ -235,7 +235,7 @@ end
 
 
 """
-  field_along_trajectory(f::GridData,sys::NavierStokes,traj::Trajectories[,deriv=0])
+  field_along_trajectory(f,traj::Trajectories[,deriv=0])
 
 Evaluate field `f` (given as grid data) along the trajectory specified by `traj`.
 The output is the history of `f` along this trajectory. If `f` is a vector field,
@@ -243,7 +243,7 @@ then the component histories are output as a tuple. If `deriv=1`, then it
 computes the time derivative of the field along the trajectory. The default
 is `deriv=0` (no derivative).
 """
-field_along_trajectory(d::GridData,sys,traj;deriv=0) = _field_along_trajectory(d,sys,traj,Val(deriv))
+field_along_trajectory(d,traj;deriv=0) = _field_along_trajectory(d,traj,Val(deriv))
 
 
 ## Internal helper functions ##
@@ -339,8 +339,8 @@ end
 
 ## For computing fields along trajectories ##
 
-function _field_along_trajectory(v::VectorGridData,sys::ILMSystem,traj::Trajectories,::Val{0})
-    vfield_x, vfield_y = interpolatable_field(v,sys.base_cache.g)
+function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,::Val{0}) where T<:AbstractInterpolation
+    vfield_x, vfield_y = v
    
     vx_traj = eltype(v)[]
     vy_traj = eltype(v)[]
@@ -353,8 +353,7 @@ function _field_along_trajectory(v::VectorGridData,sys::ILMSystem,traj::Trajecto
     return vx_traj, vy_traj
 end
    
-function _field_along_trajectory(s::ScalarGridData,sys::ILMSystem,traj::Trajectories,::Val{0})
-    sfield = interpolatable_field(s,sys.base_cache.g)
+function _field_along_trajectory(s::T,traj::Trajectories,::Val{0}) where T<:AbstractInterpolation
    
     s_traj = eltype(sfield)[]
     xh, yh = traj[1]
@@ -365,13 +364,13 @@ function _field_along_trajectory(s::ScalarGridData,sys::ILMSystem,traj::Trajecto
     return s_traj
 end
    
-function _field_along_trajectory(v::VectorGridData,sys::ILMSystem,traj::Trajectories,::Val{1})
-       utraj, vtraj = _field_along_trajectory(v,sys,traj,Val(0))
+function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,::Val{1}) where T<:AbstractInterpolation
+       utraj, vtraj = _field_along_trajectory(v,traj,Val(0))
        return ddt(utraj,traj.t), ddt(vtraj,traj.t)
 end
    
-_field_along_trajectory(s::ScalarGridData,sys::ILMSystem,traj::Trajectories,::Val{1}) =
-       ddt(_field_along_trajectory(s,sys,traj,Val(0)),traj.t)
+_field_along_trajectory(s::T,traj::Trajectories,::Val{1}) where T<:AbstractInterpolation =
+       ddt(_field_along_trajectory(s,traj,Val(0)),traj.t)
    
 
 function _check_times(tr,Trange,Δt)

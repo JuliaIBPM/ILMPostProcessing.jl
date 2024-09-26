@@ -1,9 +1,11 @@
 module ILMPostProcessing
 
-using ImmersedLayers
+#using ImmersedLayers
 using LinearAlgebra
 using Statistics
 using OrdinaryDiffEq
+using Interpolations
+using RecursiveArrayTools
 
 export pod, dmd, PODModes, DMDModes, compute_FTLE!, compute_trajectory,
         compute_streamline, compute_streakline, displacement_field, Trajectories,

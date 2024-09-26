@@ -291,7 +291,7 @@ The underlying math is detailed in: https://shaddenlab.berkeley.edu/uploads/LCS-
 - `dy`: spacing of initial grids in y 
 - `T`: length of integration time
 """
-function compute_FTLE!(FTLE::ScalarGridData, final_x::ScalarGridData, final_y::ScalarGridData, dx::Real, dy::Real, T::Real)
+function compute_FTLE!(FTLE, final_x, final_y, dx::Real, dy::Real, T::Real)
 
     nx, ny = size(final_x)
     # Shifted arrays for vector operations
