@@ -12,6 +12,7 @@ makedocs(
         "Home" => "index.md",
         "Manual" => ["manual/pod.md",
                      "manual/dmdtest.md",
+                     "manual/ftle_continuous.md",
                      "manual/ftle.md",
                      "manual/functions.md"
                      ]
