@@ -201,14 +201,3 @@ T = 5
     y = range(Y_MIN, Y_MAX, length=ny - 2)   
     contour(x, y, FTLE_f, fill=false, title="FTLE, t = $t0", xlabel="x", ylabel="y", colorbar=false, levels = 20)
 end every 1 fps = 2
-
-#md # ## FTLE functions
-#md # ```@docs
-#md # make_interp_fields!
-#md # gen_init_conds
-#md # euler_forward
-#md # euler_backward
-#md # adams_bashforth_2_forward
-#md # adams_bashforth_2_backward
-#md # compute_FTLE!
-#md # ```
