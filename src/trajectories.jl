@@ -340,7 +340,7 @@ end
 
 ## For computing fields along trajectories ##
 
-function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{0}) where T<:AbstractInterpolation
+function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{0}) where T<:Union{AbstractInterpolation,Function}
     vfield_x, vfield_y = v
    
     vx_traj = eltype(vfield_x)[]
@@ -354,7 +354,7 @@ function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{0}) wh
     return vx_traj, vy_traj
 end
    
-function _field_along_trajectory(sfield::T,traj::Trajectories,p,::Val{0}) where T<:AbstractInterpolation
+function _field_along_trajectory(sfield::T,traj::Trajectories,p,::Val{0}) where T<:Union{AbstractInterpolation,Function}
    
     s_traj = eltype(sfield)[]
     xh, yh = traj[p]
@@ -365,12 +365,12 @@ function _field_along_trajectory(sfield::T,traj::Trajectories,p,::Val{0}) where 
     return s_traj
 end
    
-function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{1}) where T<:AbstractInterpolation
+function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{1}) where T<:Union{AbstractInterpolation,Function}
        utraj, vtraj = _field_along_trajectory(v,traj,p,Val(0))
        return ddt(utraj,traj.t), ddt(vtraj,traj.t)
 end
    
-_field_along_trajectory(s::T,traj::Trajectories,p,::Val{1}) where T<:AbstractInterpolation =
+_field_along_trajectory(s::T,traj::Trajectories,p,::Val{1}) where T<:Union{AbstractInterpolation,Function} =
        ddt(_field_along_trajectory(s,traj,p,Val(0)),traj.t)
    
 
