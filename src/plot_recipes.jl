@@ -21,7 +21,7 @@ using ColorTypes
   end
 end
 
-@recipe function f(traj::Trajectories,field::T; idxs=1:traj.np, deriv=0, fieldname = "field") where T<:Union{Function,AbstractInterpolation}
+@recipe function f(traj::Trajectories,field::T; idxs=1:traj.np, deriv=0, fieldname = "field") where T<:Union{Function,AbstractInterpolation,ScalarFieldSequence}
 
   if !isa(idxs,AbstractVector{<:Int})
     error("idxs must be an AbstractVector of integers")

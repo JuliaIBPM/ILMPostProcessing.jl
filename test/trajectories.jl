@@ -43,13 +43,14 @@ using LinearAlgebra
     dt = timestep(u0,sys)
     tr = t_start:dt:t_end
     velxy = velocity_xy(sol,sys,tr)
+    vseq = VectorFieldSequence(tr,velxy)
 
     dx = 0.1
     ftlegrid = PhysicalGrid((-2,2),(-2,2),dx,optimize=false)
     ftle_cache = SurfaceScalarCache(ftlegrid)
     x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
     
-    traj = compute_trajectory(velxy,tr,(x0,y0),(t_start,t_end),alg=Euler())
+    traj = compute_trajectory(vseq,(x0,y0),(t_start,t_end),alg=Euler())
 
     @test length(traj.xhistory[end]) == length(traj.yhistory[end]) == length(x0)
 

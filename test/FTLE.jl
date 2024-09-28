@@ -30,6 +30,8 @@ using LinearAlgebra
     tr = t_start:dt:t_end
 
     velxy = velocity_xy(sol,sys,tr)
+    vseq = VectorFieldSequence(tr,velxy)
+
     u, v = velxy[end]
 
     #ILMPostProcessing.make_interp_fields!(u, v, t_start, t_end, dt, ViscousFlow.velocity, sol, sys, g)
@@ -55,8 +57,8 @@ using LinearAlgebra
     T = 0.5
     t0 = 0.5
 
-    xf, yf = displacement_field(velxy,tr,x0,y0,(t0,t0+T),alg=Euler())
-    xb, yb = displacement_field(velxy,tr,x0,y0,(t0,t0-T),alg=Euler())
+    xf, yf = displacement_field(vseq,x0,y0,(t0,t0+T),alg=Euler())
+    xb, yb = displacement_field(vseq,x0,y0,(t0,t0-T),alg=Euler())
 
     #a = ILMPostProcessing.euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
     #b = ILMPostProcessing.euler_backward(initial_conditions, u, v, t0, t_start, dt, T)

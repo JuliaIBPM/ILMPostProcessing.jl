@@ -52,52 +52,109 @@ function _pick_trajectory(traj::Trajectories,pnum::Integer)
   return map(x -> x[pnum],traj.xhistory), map(y -> y[pnum],traj.yhistory)
 end
 
+### field sequences ###
+
+abstract type AbstractFieldSequence{FT,TT} end
+
+"""
+    VectorFieldSequence(tseq::AbstractVector,vseq)
+
+This type bundles a time vector with a vector of tuples of interpolatable
+fields (i.e., each member of the tuple is of type `AbstractInterpolation`
+with two spatial coordinate arguments). It is used in trajectory computations
+and for plotting fields along trajectories. 
+"""
+struct VectorFieldSequence{FT,TT} <: AbstractFieldSequence{FT,TT}
+  tseq :: TT
+  fseq :: Vector{Tuple{FT,FT}}
+end
+
+"""
+    ScalarFieldSequence(tseq::AbstractVector,sseq)
+
+This type bundles a time vector with a vector of interpolatable
+scalar fields (i.e., each element is of type `AbstractInterpolation`
+with two spatial coordinate arguments). It is used for plotting fields along
+trajectories. 
+"""
+struct ScalarFieldSequence{FT,TT} <: AbstractFieldSequence{FT,TT}
+  tseq :: TT
+  fseq :: Vector{FT}
+end
+
+Base.step(v::AbstractFieldSequence{F,T}) where {F,T <: AbstractRange} = step(v.tseq)
+Base.step(v::AbstractFieldSequence{F,T}) where {F,T <: Vector} = v.tseq[2]-v.tseq[1]
+
+
+# These functions look up the field in the sequence at the time closest to t
+function _instantaneous_vector_field_in_series(v::VectorFieldSequence,t)
+  jr = searchsorted(v.tseq,t)
+  j1, j2 = first(jr), last(jr)
+  jt = abs(v.tseq[j1] - t) <= abs(v.tseq[j2] - t) ? j1 : j2
+  return v.fseq[jt]
+end
+
+function _instantaneous_scalar_field_in_series(s::ScalarFieldSequence,t)
+  jr = searchsorted(s.tseq,t)
+  j1, j2 = first(jr), last(jr)
+  jt = abs(s.tseq[j1] - t) <= abs(s.tseq[j2] - t) ? j1 : j2
+  return s.fseq[jt]
+end
+
+
 ## APIs ##
 
 
 
 """
-    displacement_field(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,x0,y0,Trange::Tuple[;Δt=step(tr),alg=Euler()])
+    displacement_field(v::VectorFieldSequence,x0,y0,Trange::Tuple[;Δt=step(tr),alg=Euler()])
 
-Calculate the displacement of particles initally at coordinates `x0` and `y0` over the range of times `Trange = (ti,tf)`, using the vector of spatially-interpolated
-velocity fields in `vr` (with corresponding times `tr`). The final time in `Trange` can be earlier than the initial time if backward trajectories are desired.
+Calculate the displacement of particles initally at coordinates `x0` and `y0` over the range of times `Trange = (ti,tf)`, using the sequence of spatially-interpolated
+velocity fields in `v`. (One can also provide the vector of velocity fields and the time array as separate arguments).
+The final time in `Trange` can be earlier than the initial time if backward trajectories are desired.
 The optional keyword arguments are `Δt`, the time step size (which defaults to the step size in `tr`, but could be an integer multiple larger than 1). 
 """
-function displacement_field(vr::Vector{Tuple{T,T}},tr::StepRangeLen,x0,y0,Trange::Tuple;Δt::Real=step(tr),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
+function displacement_field(v::VectorFieldSequence,x0,y0,Trange::Tuple;Δt::Real=step(v),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...)
   ti, tf = Trange
-  traj = compute_trajectory(vr,tr,(x0,y0),Trange,alg=Euler(),saveat=[tf])
+  traj = compute_trajectory(v,(x0,y0),Trange,alg=Euler(),saveat=[tf])
 
   xf, yf = traj.xhistory[1], traj.yhistory[1]
 
   return xf, yf
 end
 
+displacement_field(vr::Vector{Tuple{T,T}},tr::StepRangeLen,x0,y0,Trange;kwargs...) where T<:AbstractInterpolation = 
+        displacement_field(VectorFieldSequence(tr,vr),x0,y0,Trange;kwargs...)
+
 
 """
-   compute_trajectory(vr::Vector{Tuple{AbstractInterpolation,AbstractInterpolation}},tr::AbstractVector,X₀,Trange::Tuple[;Δt=step(tr),alg=Euler()])
+   compute_trajectory(v::VectorFieldSequence,X₀,Trange::Tuple[;Δt=step(tr),alg=Euler()])
 
 Calculate the trajectories of particles with initial location(s) `X₀`. The argument
-`vr` is a vector of spatially-interpolated velocity fields, `tr` is the corresponding time array,
+`v` contains a sequence of spatially-interpolated velocity fields and an associated time array.
+(One can also provide the vector of velocity fields and the time array as separate arguments).
+
 `X₀` can be specified as either a single vector `[x0,y0]`, a vector of vectors specifying
 x, y pairs, or a tuple of vectors or arrays specifying x and y positions, respectively,
 for multiple tracer particles. `Trange` is a tuple of the starting
 and ending integration times. The optional keyword arguments are `Δt`, the time step size (which defaults to the step size in `tr`, but could be an integer multiple larger than 1). The output is the solution
 structure for the `OrdinaryDiffEq` package.
 """
-function compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple;Δt::Real=step(tr),alg=DEFAULT_ALG,kwargs...) where T<:AbstractInterpolation
-  @assert length(vr) == length(tr) "Supplied time array must be same length as supplied velocity array"
-  ti, tf = _check_times(tr,Trange,Δt)
+function compute_trajectory(v::VectorFieldSequence,X₀,Trange::Tuple;Δt::Real=step(v),alg=DEFAULT_ALG,kwargs...)
+  ti, tf = _check_times(v.tseq,Trange,Δt)
   tsign = sign(tf-ti)
   _dt = tsign != 0 ? tsign*abs(Δt) : Δt
 
   u0 = _prepare_initial_conditions(X₀)
-  vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
+  vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,v)
 
   sol = _solve_trajectory(vfcn!,u0,Trange,_dt,alg;kwargs...)
 
   return Trajectories(sol)
   
 end
+
+compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple;kwargs...) where {T<:AbstractInterpolation} = compute_trajectory(VectorFieldSequence(tr,vr),X₀,Trange;kwargs...)
 
 
 
@@ -147,6 +204,7 @@ end
 
 #######
 
+#=
 function _compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple,Δt,alg;kwargs...) where T<:AbstractInterpolation
   @assert length(vr) == length(tr) "Supplied time array must be same length as supplied velocity array"
   tsign = sign(tf-ti)
@@ -158,6 +216,7 @@ function _compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange
   return sol
   
 end
+=#
 
 function _compute_trajectory(ufield::AbstractInterpolation{T,2},vfield::AbstractInterpolation{T,2},
                               u0,Trange,Δt,alg;kwargs...) where {T}
@@ -322,57 +381,63 @@ function _vfcn_nonautonomous(R,p,t,u,v)
    return dR
   end
 
-function _vfcn_interpolated_series!(dR::ArrayPartition,R::ArrayPartition,p,t,vr,tr)
-  jr = searchsortedfirst(tr,t)
-  u, v = vr[jr]
+function _vfcn_interpolated_series!(dR::ArrayPartition,R::ArrayPartition,p,t,vr)
+  u, v = _instantaneous_vector_field_in_series(vr,t)
   dR.x[1] .= u.(R.x[1],R.x[2])
   dR.x[2] .= v.(R.x[1],R.x[2])
   return dR
 end
 
-function _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
-  jr = searchsortedfirst(tr,t)
-  u, v = vr[jr]
+function _vfcn_interpolated_series!(dR,R,p,t,vr)
+  u, v = _instantaneous_vector_field_in_series(vr,t)
   dR[1] = u(R[1],R[2])
   dR[2] = v(R[1],R[2])
   return dR
 end
+
 
 ## For computing fields along trajectories ##
 
 function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{0}) where T<:Union{AbstractInterpolation,Function}
     vfield_x, vfield_y = v
    
-    vx_traj = eltype(vfield_x)[]
-    vy_traj = eltype(vfield_y)[]
     xh, yh = traj[p]
-    for (x,y) in zip(xh,yh)
-      push!(vx_traj,vfield_x(x,y))
-      push!(vy_traj,vfield_y(x,y))
-    end
-   
+    vx_traj = vfield_x.(xh,yh)
+    vy_traj = vfield_y.(xh,yh)
     return vx_traj, vy_traj
 end
    
 function _field_along_trajectory(sfield::T,traj::Trajectories,p,::Val{0}) where T<:Union{AbstractInterpolation,Function}
    
-    s_traj = eltype(sfield)[]
     xh, yh = traj[p]
-    for (x,y) in zip(xh,yh)
-      push!(s_traj,sfield(x,y))
-    end
-   
+    s_traj = sfield.(xh,yh)
     return s_traj
 end
-   
+
+function _field_along_trajectory(sseq::VectorFieldSequence,traj::Trajectories,p,::Val{0})
+  xh, yh = traj[p]
+  varray = map((x,y,t) -> (vel = _instantaneous_vector_field_in_series(sseq,t); tuple(vel[1](x,y), vel[2](x,y))),xh,yh,traj.t)
+  return  map(v -> v[1],varray), map(v -> v[2],varray)
+end
+
+function _field_along_trajectory(sseq::ScalarFieldSequence,traj::Trajectories,p,::Val{0})
+    xh, yh = traj[p]
+    return  map((x,y,t) -> (f = _instantaneous_scalar_field_in_series(sseq,t); f(x,y)),xh,yh,traj.t)
+end
+
 function _field_along_trajectory(v::Tuple{T,T},traj::Trajectories,p,::Val{1}) where T<:Union{AbstractInterpolation,Function}
        utraj, vtraj = _field_along_trajectory(v,traj,p,Val(0))
        return ddt(utraj,traj.t), ddt(vtraj,traj.t)
 end
    
-_field_along_trajectory(s::T,traj::Trajectories,p,::Val{1}) where T<:Union{AbstractInterpolation,Function} =
-       ddt(_field_along_trajectory(s,traj,p,Val(0)),traj.t)
-   
+_field_along_trajectory(s::T,traj::Trajectories,p,::Val{1}) where T<:Union{AbstractInterpolation,Function,ScalarFieldSequence} =
+       ddt(_field_along_trajectory(s,traj,p,Val(0)),traj.t,mydiff=:backward_diff)
+
+
+
+_evaluate_field_function(x,y,t,field::Function,::Val{4}) = field(x,y,t)
+_evaluate_field_function(x,y,t,field::Function,::Val{3}) = field(x,y)
+
 
 function _check_times(tr,Trange,Δt)
     ti, tf = Trange
@@ -383,7 +448,8 @@ function _check_times(tr,Trange,Δt)
     @assert mod(Δt,step(tr)) ≈ 0 "Supplied time step size must be integer multiple of step size in supplied time array"
     return ti, tf
 end
-       
+
+
 
 function _prepare_initial_conditions(X₀::Tuple)
   x0, y0 = X₀
