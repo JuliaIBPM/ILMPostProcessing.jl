@@ -57,48 +57,48 @@ end
 abstract type AbstractFieldSequence{FT,TT} end
 
 """
-    VectorFieldSequence(tseq::AbstractVector,vseq)
+    VectorFieldSequence(t::AbstractVector,v)
 
-This type bundles a time vector with a vector of tuples of interpolatable
+This type bundles a time vector `t` with a vector `v` of tuples of interpolatable
 fields (i.e., each member of the tuple is of type `AbstractInterpolation`
 with two spatial coordinate arguments). It is used in trajectory computations
 and for plotting fields along trajectories. 
 """
 struct VectorFieldSequence{FT,TT} <: AbstractFieldSequence{FT,TT}
-  tseq :: TT
-  fseq :: Vector{Tuple{FT,FT}}
+  t :: TT
+  v :: Vector{Tuple{FT,FT}}
 end
 
 """
-    ScalarFieldSequence(tseq::AbstractVector,sseq)
+    ScalarFieldSequence(t::AbstractVector,s)
 
-This type bundles a time vector with a vector of interpolatable
+This type bundles a time vector `t` with a vector `s` of interpolatable
 scalar fields (i.e., each element is of type `AbstractInterpolation`
 with two spatial coordinate arguments). It is used for plotting fields along
 trajectories. 
 """
 struct ScalarFieldSequence{FT,TT} <: AbstractFieldSequence{FT,TT}
-  tseq :: TT
-  fseq :: Vector{FT}
+  t :: TT
+  v :: Vector{FT}
 end
 
-Base.step(v::AbstractFieldSequence{F,T}) where {F,T <: AbstractRange} = step(v.tseq)
-Base.step(v::AbstractFieldSequence{F,T}) where {F,T <: Vector} = v.tseq[2]-v.tseq[1]
+Base.step(seq::AbstractFieldSequence{F,T}) where {F,T <: AbstractRange} = step(seq.t)
+Base.step(seq::AbstractFieldSequence{F,T}) where {F,T <: Vector} = seq.t[2]-seq.t[1]
 
 
 # These functions look up the field in the sequence at the time closest to t
-function _instantaneous_vector_field_in_series(v::VectorFieldSequence,t)
-  jr = searchsorted(v.tseq,t)
+function _instantaneous_vector_field_in_series(seq::VectorFieldSequence,t)
+  jr = searchsorted(seq.t,t)
   j1, j2 = first(jr), last(jr)
-  jt = abs(v.tseq[j1] - t) <= abs(v.tseq[j2] - t) ? j1 : j2
-  return v.fseq[jt]
+  jt = abs(seq.t[j1] - t) <= abs(seq.t[j2] - t) ? j1 : j2
+  return seq.v[jt]
 end
 
-function _instantaneous_scalar_field_in_series(s::ScalarFieldSequence,t)
-  jr = searchsorted(s.tseq,t)
+function _instantaneous_scalar_field_in_series(seq::ScalarFieldSequence,t)
+  jr = searchsorted(seq.t,t)
   j1, j2 = first(jr), last(jr)
-  jt = abs(s.tseq[j1] - t) <= abs(s.tseq[j2] - t) ? j1 : j2
-  return s.fseq[jt]
+  jt = abs(seq.t[j1] - t) <= abs(seq.t[j2] - t) ? j1 : j2
+  return seq.v[jt]
 end
 
 
@@ -114,9 +114,9 @@ velocity fields in `v`. (One can also provide the vector of velocity fields and 
 The final time in `Trange` can be earlier than the initial time if backward trajectories are desired.
 The optional keyword arguments are `Δt`, the time step size (which defaults to the step size in `tr`, but could be an integer multiple larger than 1). 
 """
-function displacement_field(v::VectorFieldSequence,x0,y0,Trange::Tuple;Δt::Real=step(v),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...)
+function displacement_field(vseq::VectorFieldSequence,x0,y0,Trange::Tuple;Δt::Real=step(vseq),alg=ILMPostProcessing.DEFAULT_ALG,kwargs...)
   ti, tf = Trange
-  traj = compute_trajectory(v,(x0,y0),Trange,alg=Euler(),saveat=[tf])
+  traj = compute_trajectory(vseq,(x0,y0),Trange,alg=Euler(),saveat=[tf])
 
   xf, yf = traj.xhistory[1], traj.yhistory[1]
 
@@ -140,12 +140,12 @@ for multiple tracer particles. `Trange` is a tuple of the starting
 and ending integration times. The optional keyword arguments are `Δt`, the time step size (which defaults to the step size in `tr`, but could be an integer multiple larger than 1). The output is the solution
 structure for the `OrdinaryDiffEq` package.
 """
-function compute_trajectory(v::VectorFieldSequence,X₀,Trange::Tuple;Δt::Real=step(v),alg=DEFAULT_ALG,kwargs...)
-  ti, tf = _check_times(v.tseq,Trange,Δt)
+function compute_trajectory(vseq::VectorFieldSequence,X₀,Trange::Tuple;Δt::Real=step(vseq),alg=DEFAULT_ALG,kwargs...)
+  ti, tf = _check_times(vseq.t,Trange,Δt)
   _dt = _standardize_time_step(ti,tf,Δt)
 
   u0 = _prepare_initial_conditions(X₀)
-  vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,v)
+  vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,vseq)
 
   sol = _solve_trajectory(vfcn!,u0,Trange,_dt,alg;kwargs...)
 
@@ -398,9 +398,9 @@ function _field_along_trajectory(sfield::T,traj::Trajectories,p,::Val{0}) where 
     return s_traj
 end
 
-function _field_along_trajectory(sseq::VectorFieldSequence,traj::Trajectories,p,::Val{0})
+function _field_along_trajectory(vseq::VectorFieldSequence,traj::Trajectories,p,::Val{0})
   xh, yh = traj[p]
-  varray = map((x,y,t) -> (vel = _instantaneous_vector_field_in_series(sseq,t); tuple(vel[1](x,y), vel[2](x,y))),xh,yh,traj.t)
+  varray = map((x,y,t) -> (vel = _instantaneous_vector_field_in_series(vseq,t); tuple(vel[1](x,y), vel[2](x,y))),xh,yh,traj.t)
   return  map(v -> v[1],varray), map(v -> v[2],varray)
 end
 
