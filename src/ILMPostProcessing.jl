@@ -8,7 +8,7 @@ using RecursiveArrayTools
 
 export pod, dmd, PODModes, DMDModes, compute_FTLE!, compute_trajectory,
         compute_streamline, compute_streakline, displacement_field, Trajectories,
-        field_along_trajectory
+        field_along_trajectory, VectorFieldSequence, ScalarFieldSequence
 
 include("utilities.jl")
 include("trajectories.jl")
