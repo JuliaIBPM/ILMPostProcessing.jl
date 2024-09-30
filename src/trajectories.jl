@@ -142,8 +142,7 @@ structure for the `OrdinaryDiffEq` package.
 """
 function compute_trajectory(v::VectorFieldSequence,X₀,Trange::Tuple;Δt::Real=step(v),alg=DEFAULT_ALG,kwargs...)
   ti, tf = _check_times(v.tseq,Trange,Δt)
-  tsign = sign(tf-ti)
-  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
+  _dt = _standardize_time_step(ti,tf,Δt)
 
   u0 = _prepare_initial_conditions(X₀)
   vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,v)
@@ -177,8 +176,11 @@ function compute_trajectory(ufield::T,
                             vfield::T,
                             X₀,Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {T<:AbstractInterpolation}
 
+  _dt = _standardize_time_step(Trange...,Δt)
+  vfcn!(dR,R,p,t) = _vfcn_autonomous!(dR,R,p,t,ufield,vfield)
   u0 = _prepare_initial_conditions(X₀)
-  sol = _compute_trajectory(ufield,vfield,u0,Trange,Δt,alg;kwargs...)
+  sol = _solve_trajectory(vfcn!,u0,Trange,_dt,alg;kwargs...)
+
   return Trajectories(sol)
 
 end
@@ -187,12 +189,9 @@ function compute_trajectory(ufcn::Function,
                             vfcn::Function,
                             X₀,Trange::Tuple;Δt::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...)
 
-  ti, tf = Trange
-  tsign = sign(tf-ti)
-  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
-
+  
+  _dt = _standardize_time_step(Trange...,Δt)
   velfcn(R,p,t) = _is_autonomous_velocity(ufcn) ? _vfcn_autonomous(R,p,t,ufcn,vfcn) : _vfcn_nonautonomous(R,p,t,ufcn,vfcn)
-
   u0 = _prepare_initial_conditions(X₀)
   sol = _solve_trajectory(velfcn,u0,Trange,_dt,alg;kwargs...)
 
@@ -200,37 +199,18 @@ function compute_trajectory(ufcn::Function,
 
 end
 
+compute_trajectory(velfield::Tuple{T,T},a...;kwargs...) where {T<:Union{AbstractInterpolation,Function}} = compute_trajectory(velfield...,a...;kwargs...)
+
+
+function _standardize_time_step(ti,tf,Δt)
+  tsign = sign(tf-ti)
+  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
+  return _dt
+end
 
 
 #######
 
-#=
-function _compute_trajectory(vr::Vector{Tuple{T,T}},tr::StepRangeLen,X₀,Trange::Tuple,Δt,alg;kwargs...) where T<:AbstractInterpolation
-  @assert length(vr) == length(tr) "Supplied time array must be same length as supplied velocity array"
-  tsign = sign(tf-ti)
-  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
-
-  vfcn!(dR,R,p,t) = _vfcn_interpolated_series!(dR,R,p,t,vr,tr)
-
-  sol = _solve_trajectory(vfcn!,X₀,Trange,_dt,alg;kwargs...)
-  return sol
-  
-end
-=#
-
-function _compute_trajectory(ufield::AbstractInterpolation{T,2},vfield::AbstractInterpolation{T,2},
-                              u0,Trange,Δt,alg;kwargs...) where {T}
-
-  ti, tf = Trange
-  tsign = sign(tf-ti)
-  _dt = tsign != 0 ? tsign*abs(Δt) : Δt
-
-  vfcn!(dR,R,p,t) = _vfcn_autonomous!(dR,R,p,t,ufield,vfield)
-
-  sol = _solve_trajectory(vfcn!,u0,Trange,_dt,alg;kwargs...)
-  return sol
-
-end
 
 """
    compute_streamline(u,v,X₀,srange::Tuple,t::Real,[;Δt=0.01])
@@ -279,18 +259,22 @@ units before the current instant `t`. The time step size `Δt` sets the resoluti
 of the streakline (i.e., how often the particles are sampled along the streakline).
 It returns arrays of the x and y coordinates of the streakline.
 """
-function compute_streakline(u,v,X₀::Vector{S},t;τmin = t-DEFAULT_T_DURATION, Δtstreak::Real=DEFAULT_DT_STREAK, Δttraj::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
+function compute_streakline(vel,X₀::Vector{S},t;τmin = t-DEFAULT_T_DURATION, Δtstreak::Real=DEFAULT_DT_STREAK, Δttraj::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
   τstreak = τmin:Δtstreak:t
   xstreak = zeros(length(τstreak))
   ystreak = zeros(length(τstreak))
 
   for (i,τ) in enumerate(τstreak)
-    traj = compute_trajectory(u,v,X₀,(τ,t);Δt = Δttraj,alg=alg,kwargs...)
+    traj = compute_trajectory(vel,X₀,(τ,t);Δt = Δttraj,alg=alg,kwargs...)
     xtraj, ytraj = traj[1]
     xstreak[i], ystreak[i] = xtraj[end],ytraj[end]
   end
   return Trajectories(1,τstreak,xstreak,ystreak)
 end
+
+compute_streakline(u::T,v::T,a...;kwargs...) where {T<:Union{AbstractInterpolation,Function}} =
+    compute_streakline((u,v),a...;kwargs...)
+
 
 
 """

@@ -2,7 +2,7 @@ using RecipesBase
 using ColorTypes
 #import PlotUtils: cgrad, palette, color_list
 
-@recipe function f(traj::Trajectories; idxs=1:traj.np)
+@recipe function f(traj::Trajectories; idxs=1:traj.np, trajname = "trajectory")
 
   xguide --> "x"
   yguide --> "y"
@@ -13,10 +13,18 @@ using ColorTypes
   end
 
   for jt in idxs
+      x, y = traj[jt]
       @series begin
         linewidth --> 2
-        label --> "trajectory $jt"
-        traj[jt]
+        label --> "$trajname $jt"
+        x, y
+      end
+      @series begin
+        markersize --> 4
+        markershape --> :circle
+        label --> ""
+        seriestype = :scatter
+        [x[1]],[y[1]]
       end
   end
 end
