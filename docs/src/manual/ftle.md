@@ -62,8 +62,9 @@ end
 plt
 ````
 
-## Discretize the Solution in Time
-This step stores the velocity fields as interpolatable fields at chosen time steps so that the velocity fields don't need to be computed every iteration the IVP is solved.
+## Generate a Sequence of Velocity Fields
+This step obtains the computed velocity field at a sequence of times, and stores them as a sequence of interpolatable
+fields in `velseq`. This will greatly speed up the steps in which we compute the flow deformation fields.
 
 ````@example ftle
 t_start = 0.0
@@ -71,7 +72,8 @@ t_end = 19.0
 dt = timestep(u0,sys)
 tr = t_start:dt:t_end
 
-velxy = velocity_xy(sol,sys,tr);
+velxy = velocity_xy(sol,sys,tr) # Vector of interpolatable velocities
+velseq = VectorFieldSequence(tr,velxy); # Bundle together with the time array
 nothing #hide
 ````
 
@@ -108,17 +110,18 @@ t0 = 6.0
 The forward displacement field and FTLE field
 
 ````@example ftle
-xf, yf = displacement_field(velxy,tr,x0,y0,(t0,t0+T),alg=Euler())
+xf, yf = displacement_field(velseq,x0,y0,(t0,t0+T),alg=Euler())
 
 fFTLE = similar(x0)
-compute_FTLE!(fFTLE,xf,yf,dx,dx,T)
+compute_FTLE!(fFTLE,xf,yf,dx,dx,T);
+nothing #hide
 ````
 
 and now the backward displacement field and FTLE field. We don't actually
 need to specify the `alg` because `Euler()` is the default.
 
 ````@example ftle
-xb, yb = displacement_field(velxy,tr,x0,y0,(t0,t0-T))
+xb, yb = displacement_field(velseq,x0,y0,(t0,t0-T))
 
 bFTLE = similar(x0)
 compute_FTLE!(bFTLE,xb,yb,dx,dx,T);
@@ -160,12 +163,12 @@ at that instant.
 
 ````@example ftle
 t0_ftle = 10.0
-xpf, ypf = displacement_field(velxy,tr,xp0,yp0,(t0,t0_ftle))
+xpf, ypf = displacement_field(velseq,xp0,yp0,(t0,t0_ftle))
 
-xf, yf = displacement_field(velxy,tr,x0,y0,(t0_ftle,t0_ftle+T))
+xf, yf = displacement_field(velseq,x0,y0,(t0_ftle,t0_ftle+T))
 compute_FTLE!(fFTLE,xf,yf,dx,dx,T)
 
-xb, yb = displacement_field(velxy,tr,x0,y0,(t0_ftle,t0_ftle-T))
+xb, yb = displacement_field(velseq,x0,y0,(t0_ftle,t0_ftle-T))
 compute_FTLE!(bFTLE,xb,yb,dx,dx,T);
 nothing #hide
 ````
@@ -184,11 +187,11 @@ The code here creates a gif
     @gif for t0_ftle in 6.5:0.5:12.0
         print(t0_ftle)
 
-        xpf, ypf = displacement_field(velxy,tr,xp0,yp0,(t0,t0_ftle))
+        xpf, ypf = displacement_field(velseq,xp0,yp0,(t0,t0_ftle))
 
-        xf, yf = displacement_field(velxy,tr,x0,y0,(t0_ftle,t0_ftle+T))
+        xf, yf = displacement_field(velseq,x0,y0,(t0_ftle,t0_ftle+T))
         compute_FTLE!(fFTLE,xf,yf,dx,dx,T)
-        xb, yb = displacement_field(velxy,tr,x0,y0,(t0_ftle,t0_ftle-T))
+        xb, yb = displacement_field(velseq,x0,y0,(t0_ftle,t0_ftle-T))
         compute_FTLE!(bFTLE,xb,yb,dx,dx,T)
 
         plot(fFTLE,ftle_cache,color=:inferno,size=(800,800))
