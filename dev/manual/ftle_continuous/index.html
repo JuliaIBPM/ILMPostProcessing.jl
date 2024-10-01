@@ -48,7 +48,7 @@ compute_FTLE!(bFTLE,xb,yb,dx,dx,T)</code></pre><pre class="documenter-example-ou
  0.16081   0.181943  0.202992  0.221204     0.232815  0.193694  0.460034
  0.116542  0.149312  0.176124  0.19727      0.207959  0.164598  0.460025
  0.470224  0.470227  0.47023   0.470235     0.180286  0.126194  0.460019</code></pre><h3 id="Plot-the-FTLEs-on-Top-of-Each-Other"><a class="docs-heading-anchor" href="#Plot-the-FTLEs-on-Top-of-Each-Other">Plot the FTLEs on Top of Each Other</a><a id="Plot-the-FTLEs-on-Top-of-Each-Other-1"></a><a class="docs-heading-anchor-permalink" href="#Plot-the-FTLEs-on-Top-of-Each-Other" title="Permalink"></a></h3><pre><code class="language-julia hljs">plot(fFTLE, ftle_cache,fill=false, title=&quot;FTLE, t = $t0&quot;, xlabel=&quot;x&quot;, ylabel=&quot;y&quot;, colorbar=false, levels = 30, c=:inferno)
-plot!(bFTLE, ftle_cache, fill=false, colorbar=false, levels = 30, c=:viridis)</code></pre><img src="dc5f4f40.svg" alt="Example block output"/><p>The code here creates a gif</p><pre><code class="nohighlight hljs">fFTLE = similar(x0)
+plot!(bFTLE, ftle_cache, fill=false, colorbar=false, levels = 30, c=:viridis)</code></pre><img src="ee3ebca5.svg" alt="Example block output"/><p>The code here creates a gif</p><pre><code class="nohighlight hljs">fFTLE = similar(x0)
 bFTLE = similar(x0)
 
 @gif for t0 in 0.0:1.0:10.0
