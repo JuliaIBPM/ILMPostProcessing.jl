@@ -77,13 +77,13 @@ end
     @test typeof(traj.xhistory)<:Vector && typeof(traj.yhistory)<:Vector
 
     x1, y1 = traj[1]
-    @test norm(pts[1][2] .+ 1.0 .- cos.(traj.t) .- y1) < 1e-10
+    @test norm(pts[1][2] .+ 1.0 .- cos.(traj.t) .- y1) < 1e-7
 
 
     tsline = π
     sline = compute_streamline(ufcn2,vfcn2,pts,(0,10),tsline,alg=Tsit5())
     x1, y1 = sline[2]
-    @test norm(y1 .- pts[2][2]) < 1e-10
+    @test norm(y1 .- pts[2][2]) < 1e-7
 
 
 end

@@ -256,22 +256,26 @@ of such solution structures).
 """
 function compute_streamline(ufcn::Function,
                             vfcn::Function,
-                            X₀,srange::Tuple,t::Real;Δs::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...)
+                            X₀,srange::Tuple,t::Real;ds=:auto,alg=DEFAULT_ADAPTIVE_ALG,kwargs...)
 
   velfcn(R,p,s) = _is_autonomous_velocity(ufcn) ? _vfcn_autonomous(R,p,s,ufcn,vfcn) : _vfcn_nonautonomous_frozentime(R,p,s,ufcn,vfcn)
 
+  _ds, _autods = _standardize_time_step(srange...,ds)
+
   u0 = _prepare_initial_conditions(X₀)
-  sol = _solve_streamline(velfcn,u0,srange,Δs,t,alg;kwargs...)
+  sol = _solve_streamline(velfcn,u0,srange,_ds,t,alg,Val(_autods);kwargs...)
   return Trajectories(sol)
 
 end
 
 function compute_streamline(ufield::AbstractInterpolation{T,2},vfield::AbstractInterpolation{T,2},
-      X₀,srange::Tuple,t::Real;Δs=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {T}
+      X₀,srange::Tuple,t::Real;ds=:auto,alg=DEFAULT_ADAPTIVE_ALG,kwargs...) where {T}
 
    vfcn!(dR,R,p,s) = _vfcn_autonomous!(dR,R,p,s,ufield,vfield)
+   _ds, _autods = _standardize_time_step(srange...,ds)
+
    u0 = _prepare_initial_conditions(X₀)
-   sol = _solve_streamline(vfcn!,u0,srange,Δs,t,alg;kwargs...)
+   sol = _solve_streamline(vfcn!,u0,srange,_ds,t,alg,Val(_autods);kwargs...)
    return Trajectories(sol)
 
 end
