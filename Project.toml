@@ -1,7 +1,7 @@
 name = "ILMPostProcessing"
 uuid = "3d549a52-7b57-4935-b05e-d5b0ee0c7825"
 authors = ["Jeff Eldredge <jdeldre@g.ucla.edu>"]
-version = "0.2.2"
+version = "0.2.3"
 
 [deps]
 ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
