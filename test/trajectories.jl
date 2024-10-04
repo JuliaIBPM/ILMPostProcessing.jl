@@ -85,5 +85,14 @@ end
     x1, y1 = sline[2]
     @test norm(y1 .- pts[2][2]) < 1e-7
 
+    u(x,y,t) = 1.0
+    v(x,y,t) = cos(2π*(x-t))
+    y = [0.0,0.0]
+    t = 0.0
+    streak = compute_streakline(u,v,y,t)
+    xs, ys = streak[1]
+    @test xs[1] ≈ 3 && ys[1] ≈ 3 && xs[end] ≈ y[1] && ys[end] ≈ y[2]
+
+
 
 end
