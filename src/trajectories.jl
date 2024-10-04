@@ -195,7 +195,7 @@ of such solution structures).
 """
 function compute_trajectory(ufield::T,
                             vfield::T,
-                            X₀,Trange::Tuple;dt=:auto,alg=DEFAULT_ALG,kwargs...) where {T<:AbstractInterpolation}
+                            X₀,Trange::Tuple;dt=DEFAULT_DT,alg=DEFAULT_ADAPTIVE_ALG,kwargs...) where {T<:AbstractInterpolation}
 
   _dt, _autodt = _standardize_time_step(Trange...,dt)
   vfcn!(dR,R,p,t) = _vfcn_autonomous!(dR,R,p,t,ufield,vfield)
@@ -208,7 +208,7 @@ end
 
 function compute_trajectory(ufcn::Function,
                             vfcn::Function,
-                            X₀,Trange::Tuple;dt=:auto,alg=DEFAULT_ALG,kwargs...)
+                            X₀,Trange::Tuple;dt=DEFAULT_DT,alg=DEFAULT_ADAPTIVE_ALG,kwargs...)
 
   
   _dt, _autodt = _standardize_time_step(Trange...,dt)
@@ -222,7 +222,8 @@ function compute_trajectory(ufcn::Function,
 
 end
 
-compute_trajectory(velfield::Tuple{T,T},a...;kwargs...) where {T<:Union{AbstractInterpolation,Function}} = compute_trajectory(velfield...,a...;kwargs...)
+compute_trajectory(velfield::Tuple{T1,T2},X₀,Trange::Tuple;kwargs...) where {T1<:Union{AbstractInterpolation,Function},T2<:Union{AbstractInterpolation,Function}} = 
+          compute_trajectory(velfield...,X₀,Trange;kwargs...)
 
 
 function _standardize_time_step(ti,tf,dt::Real)
@@ -256,7 +257,7 @@ of such solution structures).
 """
 function compute_streamline(ufcn::Function,
                             vfcn::Function,
-                            X₀,srange::Tuple,t::Real;ds=:auto,alg=DEFAULT_ADAPTIVE_ALG,kwargs...)
+                            X₀,srange::Tuple,t::Real;ds=DEFAULT_DT,alg=DEFAULT_ADAPTIVE_ALG,kwargs...)
 
   velfcn(R,p,s) = _is_autonomous_velocity(ufcn) ? _vfcn_autonomous(R,p,s,ufcn,vfcn) : _vfcn_nonautonomous_frozentime(R,p,s,ufcn,vfcn)
 
@@ -269,7 +270,7 @@ function compute_streamline(ufcn::Function,
 end
 
 function compute_streamline(ufield::AbstractInterpolation{T,2},vfield::AbstractInterpolation{T,2},
-      X₀,srange::Tuple,t::Real;ds=:auto,alg=DEFAULT_ADAPTIVE_ALG,kwargs...) where {T}
+      X₀,srange::Tuple,t::Real;ds=DEFAULT_DT,alg=DEFAULT_ADAPTIVE_ALG,kwargs...) where {T}
 
    vfcn!(dR,R,p,s) = _vfcn_autonomous!(dR,R,p,s,ufield,vfield)
    _ds, _autods = _standardize_time_step(srange...,ds)
@@ -290,21 +291,22 @@ units before the current instant `t`. The time step size `dtstreak` sets the res
 of the streakline (i.e., how often the particles are sampled along the streakline).
 It returns arrays of the x and y coordinates of the streakline.
 """
-function compute_streakline(vel,X₀::Vector{S},t;τmin = t-DEFAULT_T_DURATION, dtstreak::Real=DEFAULT_DT_STREAK, dttraj::Real=DEFAULT_DT,alg=DEFAULT_ALG,kwargs...) where {S<:Real}
+function compute_streakline(vel::Union{Tuple,Vector},X₀::Vector{S},t::Real;τmin = t-DEFAULT_T_DURATION, dtstreak::Real=DEFAULT_DT_STREAK, dttraj::Real=DEFAULT_DT,alg=DEFAULT_ALG) where {S<:Real} #,kwargs...) 
   τstreak = τmin:dtstreak:t
   xstreak = zeros(length(τstreak))
   ystreak = zeros(length(τstreak))
 
   for (i,τ) in enumerate(τstreak)
-    traj = compute_trajectory(vel,X₀,(τ,t);dt = dttraj,alg=alg,kwargs...)
+    traj = compute_trajectory(vel,X₀,(τ,t);dt = dttraj,alg=alg) #,kwargs...)
     xtraj, ytraj = traj[1]
     xstreak[i], ystreak[i] = xtraj[end],ytraj[end]
   end
   return Trajectories(1,τstreak,xstreak,ystreak)
 end
 
-compute_streakline(u::T,v::T,a...;kwargs...) where {T<:Union{AbstractInterpolation,Function}} =
-    compute_streakline((u,v),a...;kwargs...)
+compute_streakline(u::T1,v::T2,X₀::Vector{S},t::Real;kwargs...) where {T1<:Union{AbstractInterpolation,Function}, T2<:Union{AbstractInterpolation,Function}, S<:Real} =
+    compute_streakline((u,v),X₀,t;kwargs...)
+ 
 
 
 
