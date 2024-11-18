@@ -165,12 +165,6 @@ plot(vorticity(sol, sys, t0), sys, levels = 20, colorbar = true)
 plot!(surfaces(sol,sys,t0))
 ````
 
-## LAVD functions
-```@docs
-compute_LAVD!
-compute_IVD!
-```
-
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*

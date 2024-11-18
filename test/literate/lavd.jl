@@ -161,9 +161,3 @@ plot!(surfaces(sol,sys,t0))
 
 plot(vorticity(sol, sys, t0), sys, levels = 20, colorbar = true)
 plot!(surfaces(sol,sys,t0))
-
-#md # ## LAVD functions
-#md # ```@docs
-#md # compute_LAVD!
-#md # compute_IVD!
-#md # ```

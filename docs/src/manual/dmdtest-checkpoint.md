@@ -121,11 +121,6 @@ vals, idex = findmin(abs2.(true_evals .- transpose(dmdmodes.evals)),dims=2)
 err = sqrt(sum(vals))
 ````
 
-## DMD functions
-```@docs
-dmd
-```
-
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*

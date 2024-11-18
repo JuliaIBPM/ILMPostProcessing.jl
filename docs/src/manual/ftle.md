@@ -201,17 +201,6 @@ The code here creates a gif
 
     end every 1 fps = 2
 
-## FTLE functions
-```@docs
-make_interp_fields!
-gen_init_conds
-euler_forward
-euler_backward
-adams_bashforth_2_forward
-adams_bashforth_2_backward
-compute_FTLE!
-```
-
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
