@@ -38,6 +38,7 @@ if GROUP == "All" || GROUP == "Auxiliary"
     include("POD.jl")
     include("trajectories.jl")
     include("FTLE.jl")
+    include("LAVD.jl")
 end
 
 if GROUP == "All" || GROUP == "Literate"
