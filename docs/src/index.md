@@ -8,6 +8,7 @@ are
 * Proper orthogonal decomposition (POD)
 * Dynamic mode decomposition (DMD)
 * Finite-time Lyapunov exponent (FTLE)
+* Lagrangian-averaged vorticity deviation (LAVD)
 
 ## Installation
 
