@@ -11,5 +11,6 @@ This package contains tools that can be used to post-process and analyze the sol
 * proper orthogonal decomposition (POD)
 * dynamic mode decomposition (DMD)
 * finite-time Lyapunov exponent (FTLE)
+* Lagrangian-averaged vorticity deviation (LAVD)
 
 The examples in the documentation, which have companion notebooks in the `examples` folder, are the best way to get started.   
