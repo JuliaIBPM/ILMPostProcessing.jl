@@ -1,6 +1,6 @@
 #=
 # Lagrangian-averaged vorticity deviation (LAVD)
-In this example, we will compute the Lagrangian-averaged vorticity deviation (LAVD) field for a pitching airfoil. 
+In this example, we will compute the Lagrangian-averaged vorticity deviation (LAVD) field for a flat plate undergoing a 45-degree pitch-up maneuver. The original simluation of the flat plate was used by Wang and Eldredge 2012 (https://doi.org/10.1007/s00162-012-0279-5). The results are compared with Huang and Green 2016 (https://arc.aiaa.org/doi/10.2514/6.2016-2082). The theory behind LAVD can be found in Haller et al. 2016 (https://doi.org/10.1017/jfm.2016.151). A MATLAB package for computing LAVD and extracting coherent vortices can be found here (https://github.com/Hadjighasem/Lagrangian-Averaged-Vorticity-Deviation-LAVD).
 =#
 
 #md # ```@meta
@@ -10,9 +10,11 @@ In this example, we will compute the Lagrangian-averaged vorticity deviation (LA
 using ILMPostProcessing
 using ViscousFlow
 using Plots
+using Statistics
 
 #=
 # Viscous Flow of Pitching Flat Plate
+For faster compututation and testing purposes, the Reynolds number is set to 100 as opposed to 1000 in Huang's paper. The grid Re is also set to 4.0. If better resolution is desired, try grid Re = 3.0. The domain of interest is from x = -0.5 to x = 5.5, but it is set from x = -3.0 to x = 5.5 the velocity and vorticity fields ahead of the flat plate are required to compute LAVD.
 =#
 
 my_params = Dict() 
@@ -21,13 +23,13 @@ my_params["grid Re"] = 4.0
 my_params["freestream speed"] = 1.0
 my_params["freestream angle"] = 0.0
 
-xlim = (-1.0,10.0)
-ylim = (-2.0,2.0)
+xlim = (-3.0,5.5)
+ylim = (-2.0,1.0)
 g = setup_grid(xlim,ylim,my_params)
 
 Δs = surface_point_spacing(g,my_params)
 Lp = 1.0
-body = Plate(Lp,Δs)
+body = Rectangle(Lp/2,0.023/2,Δs)
 bl = BodyList([body])
 
 parent_body, child_body = 0, 1
@@ -35,8 +37,8 @@ Xp = MotionTransform([0,0],0) # location of joint in inertial system
 xpiv = [-0.5,0] # place center of motion at LE
 Xc = MotionTransform(xpiv,0)
 
-vel = 1.0  ## nominal ramp velocity
-Δx = 20pi/180 ## change in position
+vel = 45pi/180  ## nominal ramp velocity
+Δx = -45pi/180 ## change in position
 t0 = 1.0 ## time of ramp start
 k = SmoothRampDOF(vel,Δx,t0)
 
@@ -67,7 +69,7 @@ macro animate_motion(b,m,dt,tmax,xlim,ylim)
         end)
 end
 
-@animate_motion bl m 0.01 4 xlim ylim
+@animate_motion bl m 0.01 4 (-0.5, 5.5) ylim
 
 function my_vsplus(t,x,base_cache,phys_params,motions)
   vsplus = zeros_surface(base_cache)
@@ -94,13 +96,13 @@ tspan = (0.0,10.0)
 integrator = init(u0,tspan,sys,alg=LiskaIFHERK(saddlesolver=CG))
 
 step!(integrator)
-@time step!(integrator,8)
+@time step!(integrator,9.0)
 
 sol = integrator.sol
-plt = plot(layout = (3,3), size = (1000, 800), legend=:false)
-tsnap = 0.0:1.0:8.0
+plt = plot(layout = (5,2), size = (1000, 1200), legend=:false)
+tsnap = 0.0:1.0:9.0
 for (i, t) in enumerate(tsnap)
-    plot!(plt[i],vorticity(sol,sys,t),sys,layers=false,title="t = $(round(t,digits=2))",clim=(-5,5),levels=range(-5,5,length=30),color = :RdBu)
+    plot!(plt[i],vorticity(sol,sys,t),sys,layers=false,title="t = $(round(t,digits=2))",clim=(-5,5),levels=range(-5,5,length=30),color = :RdBu, xlim = (-0.5, 5.5))
     plot!(plt[i],surfaces(sol,sys,t))
 end
 plt
@@ -116,7 +118,7 @@ fields. This will greatly speed up how we compute the flow properties (i.e. vort
 =#
 
 t_start = 0.0
-t_end = 8.0
+t_end = 8.5
 dt = timestep(u0,sys)
 tr = t_start:dt:t_end
 
@@ -130,11 +132,11 @@ vortseq = ScalarFieldSequence(tr,vortxy);
 Here, we generate a grid of initial locations from which to integrate trajectories.
 =#
 
-X_MIN = 1.0
-X_MAX = 10.0
+X_MIN = -0.5
+X_MAX = 5.5
 Y_MIN = -2.0
-Y_MAX = 2.0
-dx = 0.01
+Y_MAX = 1.0
+dx = 0.04
 lavdgrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx)
 lavd_cache = SurfaceScalarCache(lavdgrid)
 x0, y0 = x_grid(lavd_cache), y_grid(lavd_cache)
@@ -143,21 +145,24 @@ x0, y0 = x_grid(lavd_cache), y_grid(lavd_cache)
 ## Solve the IVP and Generate LAVD Fields
 =#
 
-T = 3.0
-t0 = 2.0
+T = -2.0
+t0 = 8.5
 t1 = t0 + T
 
 @time traj = compute_trajectory(velseq, (x0, y0), (t0, t1))
 
 LAVD = similar(x0)
 compute_LAVD!(LAVD, traj, X_MIN, Y_MIN, X_MAX, Y_MAX, vortseq)
-plot(LAVD, lavd_cache, colorbar=true, levels  = 10)
+plot(LAVD, lavd_cache, colorbar=true, levels  = 20)
 plot!(surfaces(sol,sys,t0))
+#savefig("lavd")
 
 IVD = similar(x0)
 compute_IVD!(IVD, traj, X_MIN, Y_MIN, X_MAX, Y_MAX, vortseq)
-plot(IVD, lavd_cache, colorbar=true, levels = 10)
+plot(IVD, lavd_cache, colorbar=true, levels = 20)
 plot!(surfaces(sol,sys,t0))
+#savefig("ivd")
 
-plot(vorticity(sol, sys, t0), sys, levels = 20, colorbar = true)
+plot(vorticity(sol, sys, t0), sys, layers = false,clim=(-5,5),levels=range(-5,5,length=30), colorbar=true, xlim=(-0.5, 5.5))
 plot!(surfaces(sol,sys,t0))
+#savefig("vorticity")
