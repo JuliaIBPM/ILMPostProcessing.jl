@@ -7,14 +7,14 @@ function compute_LAVD!(LAVD, traj, X_MIN, Y_MIN, X_MAX, Y_MAX, vortseq)
     t1 = traj.t[1]
     x1 = traj.xhistory[1]
     y1 = traj.yhistory[1]
-    w3_1 = ILMPostProcessing._instantaneous_scalar_field_in_series(vortseq, t1)  
+    w3_1 = _instantaneous_scalar_field_in_series(vortseq, t1)  
     fn1 = abs.(w3_1.(x1, y1) - mean(w3_1.(x1, y1)))
     
     for i in 2:length(traj.t) 
         t2 = traj.t[i]
         x2 = traj.xhistory[i]
         y2 = traj.yhistory[i]
-        w3_2 = ILMPostProcessing._instantaneous_scalar_field_in_series(vortseq, t2)
+        w3_2 = _instantaneous_scalar_field_in_series(vortseq, t2)
         fn2 = abs.(w3_2.(x2, y2) - mean(w3_2.(x2, y2)))
         
         ds = sqrt.((x2-x1).^2+(y2-y1).^2)
@@ -37,6 +37,6 @@ function compute_IVD!(IVD, traj, X_MIN, Y_MIN, X_MAX, Y_MAX, vortseq)
     x0 = traj.xhistory[1]
     y0 = traj.yhistory[1]
     w3 = _instantaneous_scalar_field_in_series(vortseq, t0)
-    IVD .= abs.(w3.(x0, y0) - _integrate_w3(t0, X_MIN, Y_MIN, X_MAX, Y_MAX, vortseq));
+    IVD .= abs.(w3.(x0, y0) - mean(w3.(x0, y0)));
 end
 
