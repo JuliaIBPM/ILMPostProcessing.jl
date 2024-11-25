@@ -187,12 +187,15 @@ x0, y0 = x_grid(lavd_cache), y_grid(lavd_cache)
 
 ## Solve the IVP and Generate LAVD Fields
 
+Compute trajectories
+
 ````@example lavd
 T = -2.0
 t0 = 8.5
 t1 = t0 + T
 
-@time traj = compute_trajectory(velseq, (x0, y0), (t0, t1))
+@time traj = compute_trajectory(velseq, (x0, y0), (t0, t1));
+nothing #hide
 ````
 
 Compute LAVD
