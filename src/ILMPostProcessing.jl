@@ -5,7 +5,6 @@ using Statistics
 using OrdinaryDiffEq
 using Interpolations
 using RecursiveArrayTools
-using HCubature
 
 export pod, dmd, PODModes, DMDModes, compute_FTLE!, compute_LAVD!, compute_IVD!, compute_trajectory,
         compute_streamline, compute_streakline, displacement_field, Trajectories,
