@@ -13,8 +13,8 @@ using Plots
 using Statistics
 
 #=
-# Viscous Flow of Pitching Flat Plate
-## Problem Specification
+## Viscous Flow of Pitching Flat Plate
+### Problem Specification
 For faster compututation and testing purposes, the Reynolds number is set to 100 as opposed to 1000 in Huang's paper. The grid Re is also set to 4.0. If better resolution is desired, try grid Re = 3.0. The domain of interest is from x = -0.5 to x = 5.5, but it is set from x = -3.0 to x = 5.5 since the velocity and vorticity fields ahead of the flat plate are required to compute LAVD.
 =#
 
@@ -30,7 +30,7 @@ g = setup_grid(xlim,ylim,my_params)
 Δs = surface_point_spacing(g,my_params)
 
 #=
-## Set up Body
+### Set up Body
 Create a rectangle of length 1.0 and thickness 0.023.
 =#
 
@@ -39,7 +39,7 @@ body = Rectangle(Lp/2,0.023/2,Δs)
 bl = BodyList([body])
 
 #=
-## Set the Body Motion
+### Set the Body Motion
 Create a smooth position ramp of 45 degreess of the flat plate's angle of attack about its leading edge.
 =#
 
@@ -93,7 +93,7 @@ end
 @animate_motion bl m 0.01 4 (-0.5, 5.5) ylim
 
 #=
-## Define the Boundary Condition Functions
+### Define the Boundary Condition Functions
 =#
 
 function my_vsplus(t,x,base_cache,phys_params,motions)
@@ -111,7 +111,7 @@ end
 bcdict = Dict("exterior" => my_vsplus, "interior" => my_vsminus)
 
 #=
-## Construct the system structure
+### Construct the system structure
 =#
 
 sys = viscousflow_system(g,bl,phys_params=my_params,motions=m,bc=bcdict);
@@ -149,11 +149,11 @@ end
 plt
 
 #=
-# Compute LAVD 
+## Compute LAVD 
 =#
 
 #=
-## Generate a Sequence of Velocity and Vorticity Fields
+### Generate a Sequence of Velocity and Vorticity Fields
 This step obtains the computed velocity and vorticity fields at a sequence of times, and stores them as a sequence of interpolatable
 fields. This will greatly speed up how we compute the flow properties (i.e. vorticity) along trajectories.
 =#
@@ -169,7 +169,7 @@ vortxy = vorticity_xy(sol,sys,tr)
 vortseq = ScalarFieldSequence(tr,vortxy);
 
 #=
-## Generate Initial Conditions
+### Generate Initial Conditions
 Here, we generate a grid of initial locations from which to integrate trajectories.
 =#
 
@@ -183,7 +183,7 @@ lavd_cache = SurfaceScalarCache(lavdgrid)
 x0, y0 = x_grid(lavd_cache), y_grid(lavd_cache)
 
 #=
-## Solve the IVP and Generate LAVD Fields
+### Solve the IVP and Generate LAVD Fields
 =#
 
 #=
