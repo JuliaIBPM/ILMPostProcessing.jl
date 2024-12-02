@@ -87,7 +87,7 @@ X_MAX = 2.0
 Y_MIN = -2.0
 Y_MAX = 2.0
 dx = 0.01
-ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx,optimize=false)
+ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx)
 ftle_cache = SurfaceScalarCache(ftlegrid)
 x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
 ````
@@ -148,7 +148,7 @@ xp_max = 0.0
 yp_min = 0.5
 yp_max = 1.5
 dxp = 0.1
-p_grid = PhysicalGrid((xp_min,xp_max),(yp_min,yp_max),dxp,optimize=false)
+p_grid = PhysicalGrid((xp_min,xp_max),(yp_min,yp_max),dxp)
 p_cache = SurfaceScalarCache(p_grid);
 xp0, yp0 = x_grid(p_cache), y_grid(p_cache);
 
@@ -200,17 +200,6 @@ The code here creates a gif
         scatter!(vec(xpf[8:end,1:end]),vec(ypf[8:end,1:end]))
 
     end every 1 fps = 2
-
-## FTLE functions
-```@docs
-make_interp_fields!
-gen_init_conds
-euler_forward
-euler_backward
-adams_bashforth_2_forward
-adams_bashforth_2_backward
-compute_FTLE!
-```
 
 ---
 

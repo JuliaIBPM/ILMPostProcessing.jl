@@ -125,11 +125,6 @@ The energy associated with this mode is
 modes.lambda[end]
 ````
 
-## POD functions
-```@docs
-pod
-```
-
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
