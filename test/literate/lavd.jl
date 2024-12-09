@@ -179,7 +179,9 @@ Y_MIN = -2.0
 Y_MAX = 1.0
 dx = 0.04
 lavdgrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx)
+ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx)
 lavd_cache = SurfaceScalarCache(lavdgrid)
+ftle_cache = SurfaceScalarCache(ftlegrid)
 x0, y0 = x_grid(lavd_cache), y_grid(lavd_cache)
 
 #=
@@ -223,3 +225,17 @@ Plot the vorticity fields
 plot(vorticity(sol, sys, t0), sys, layers = false,clim = (-5,5),levels = range(-5,5,length=30), colorbar = true, xlim = (-0.5, 5.5))
 plot!(surfaces(sol,sys,t0))
 #savefig("vorticity")
+
+#=
+Compute and plot the backward FTLE field
+=#
+
+T = 8.5
+t0 = 8.5
+xb, yb = displacement_field(velseq,x0,y0,(t0,t0-T),alg=Euler())
+fFTLE = similar(x0)
+compute_FTLE!(fFTLE,xb,yb,dx,dx,T);
+
+plot(fFTLE,ftle_cache, colorbar = true, levels = 100)
+plot!(surfaces(sol,sys,t0))
+#savefig("ftle")
