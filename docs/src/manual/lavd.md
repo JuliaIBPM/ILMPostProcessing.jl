@@ -16,8 +16,8 @@ using Plots
 using Statistics
 ````
 
-# Viscous Flow of Pitching Flat Plate
-## Problem Specification
+## Viscous Flow of Pitching Flat Plate
+### Problem Specification
 For faster compututation and testing purposes, the Reynolds number is set to 100 as opposed to 1000 in Huang's paper. The grid Re is also set to 4.0. If better resolution is desired, try grid Re = 3.0. The domain of interest is from x = -0.5 to x = 5.5, but it is set from x = -3.0 to x = 5.5 since the velocity and vorticity fields ahead of the flat plate are required to compute LAVD.
 
 ````@example lavd
@@ -33,7 +33,7 @@ g = setup_grid(xlim,ylim,my_params)
 Δs = surface_point_spacing(g,my_params)
 ````
 
-## Set up Body
+### Set up Body
 Create a rectangle of length 1.0 and thickness 0.023.
 
 ````@example lavd
@@ -42,7 +42,7 @@ body = Rectangle(Lp/2,0.023/2,Δs)
 bl = BodyList([body])
 ````
 
-## Set the Body Motion
+### Set the Body Motion
 Create a smooth position ramp of 45 degreess of the flat plate's angle of attack about its leading edge.
 
 ````@example lavd
@@ -96,7 +96,7 @@ end
 @animate_motion bl m 0.01 4 (-0.5, 5.5) ylim
 ````
 
-## Define the Boundary Condition Functions
+### Define the Boundary Condition Functions
 
 ````@example lavd
 function my_vsplus(t,x,base_cache,phys_params,motions)
@@ -114,7 +114,7 @@ end
 bcdict = Dict("exterior" => my_vsplus, "interior" => my_vsminus)
 ````
 
-## Construct the system structure
+### Construct the system structure
 
 ````@example lavd
 sys = viscousflow_system(g,bl,phys_params=my_params,motions=m,bc=bcdict);
@@ -152,9 +152,9 @@ end
 plt
 ````
 
-# Compute LAVD
+## Compute LAVD
 
-## Generate a Sequence of Velocity and Vorticity Fields
+### Generate a Sequence of Velocity and Vorticity Fields
 This step obtains the computed velocity and vorticity fields at a sequence of times, and stores them as a sequence of interpolatable
 fields. This will greatly speed up how we compute the flow properties (i.e. vorticity) along trajectories.
 
@@ -171,7 +171,7 @@ vortseq = ScalarFieldSequence(tr,vortxy);
 nothing #hide
 ````
 
-## Generate Initial Conditions
+### Generate Initial Conditions
 Here, we generate a grid of initial locations from which to integrate trajectories.
 
 ````@example lavd
@@ -181,11 +181,13 @@ Y_MIN = -2.0
 Y_MAX = 1.0
 dx = 0.04
 lavdgrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx)
+ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx)
 lavd_cache = SurfaceScalarCache(lavdgrid)
+ftle_cache = SurfaceScalarCache(ftlegrid)
 x0, y0 = x_grid(lavd_cache), y_grid(lavd_cache)
 ````
 
-## Solve the IVP and Generate LAVD Fields
+### Solve the IVP and Generate LAVD Fields
 
 Compute trajectories
 
@@ -224,6 +226,20 @@ Plot the vorticity fields
 plot(vorticity(sol, sys, t0), sys, layers = false,clim = (-5,5),levels = range(-5,5,length=30), colorbar = true, xlim = (-0.5, 5.5))
 plot!(surfaces(sol,sys,t0))
 #savefig("vorticity")
+````
+
+Compute and plot the backward FTLE field
+
+````@example lavd
+T = 8.5
+t0 = 8.5
+xb, yb = displacement_field(velseq,x0,y0,(t0,t0-T),alg=Euler())
+fFTLE = similar(x0)
+compute_FTLE!(fFTLE,xb,yb,dx,dx,T);
+
+plot(fFTLE,ftle_cache, colorbar = true, levels = 100)
+plot!(surfaces(sol,sys,t0))
+#savefig("ftle")
 ````
 
 ---
