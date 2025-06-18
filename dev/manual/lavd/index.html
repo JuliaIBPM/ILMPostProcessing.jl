@@ -20,7 +20,7 @@ bl = BodyList([body])</code></pre><pre class="documenter-example-output"><code c
 Δx = -45pi/180 ## change in position
 t0 = 1.0 ## time of ramp start
 k = SmoothRampDOF(vel,Δx,t0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Smooth position ramp kinematics (nominal rate = -0.7853981633974483, amplitude = -0.7853981633974483, nominal time = 1.0), smoothing=logcosh ramp (aₛ = 11.0)</code></pre><p>Plot the ramp.</p><pre><code class="language-julia hljs">t = range(0,3,length=301)
-plot(t,dof_position.(k.(t)),xlims=(0,Inf),label=&quot;x&quot;)</code></pre><img src="27c03e54.svg" alt="Example block output"/><p>Create the joint.</p><pre><code class="language-julia hljs">parent_body, child_body = 0, 1
+plot(t,dof_position.(k.(t)),xlims=(0,Inf),label=&quot;x&quot;)</code></pre><img src="070fdefb.svg" alt="Example block output"/><p>Create the joint.</p><pre><code class="language-julia hljs">parent_body, child_body = 0, 1
 Xp = MotionTransform([0,0],0) # location of joint in inertial system
 xpiv = [-0.5,0] # place center of motion at LE
 Xc = MotionTransform(xpiv,0)
@@ -29,7 +29,7 @@ m = RigidBodyMotion([joint1],bl)
 
 x = init_motion_state(bl,m)
 update_body!(bl,x,m)
-plot(bl,xlim=xlim,ylim=ylim)</code></pre><img src="5a7f423d.svg" alt="Example block output"/><p>Animate the motion</p><pre><code class="language-julia hljs">macro animate_motion(b,m,dt,tmax,xlim,ylim)
+plot(bl,xlim=xlim,ylim=ylim)</code></pre><img src="68f15765.svg" alt="Example block output"/><p>Animate the motion</p><pre><code class="language-julia hljs">macro animate_motion(b,m,dt,tmax,xlim,ylim)
     return esc(quote
             bc = deepcopy($b)
             t0, x0 = 0.0, init_motion_state(bc,$m)
@@ -67,14 +67,14 @@ Re_eff = my_params[&quot;Re&quot;]*Umax*L</code></pre><pre class="documenter-exa
 integrator = init(u0,tspan,sys,alg=LiskaIFHERK(saddlesolver=CG))
 
 step!(integrator)
-@time step!(integrator,9.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">171.668656 seconds (68.48 M allocations: 85.713 GiB, 0.52% gc time, 0.04% compilation time)</code></pre><p>Plot the solutions.</p><pre><code class="language-julia hljs">sol = integrator.sol
+@time step!(integrator,9.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">173.335191 seconds (68.48 M allocations: 85.713 GiB, 0.82% gc time, 0.03% compilation time)</code></pre><p>Plot the solutions.</p><pre><code class="language-julia hljs">sol = integrator.sol
 plt = plot(layout = (5,2), size = (1000, 1200), legend=:false)
 tsnap = 0.0:1.0:9.0
 for (i, t) in enumerate(tsnap)
     plot!(plt[i],vorticity(sol,sys,t),sys,layers=false,title=&quot;t = $(round(t,digits=2))&quot;,clim=(-5,5),levels=range(-5,5,length=30),color = :RdBu, xlim = (-0.5, 5.5))
     plot!(plt[i],surfaces(sol,sys,t))
 end
-plt</code></pre><img src="fc446926.svg" alt="Example block output"/><h2 id="Compute-LAVD"><a class="docs-heading-anchor" href="#Compute-LAVD">Compute LAVD</a><a id="Compute-LAVD-1"></a><a class="docs-heading-anchor-permalink" href="#Compute-LAVD" title="Permalink"></a></h2><h3 id="Generate-a-Sequence-of-Velocity-and-Vorticity-Fields"><a class="docs-heading-anchor" href="#Generate-a-Sequence-of-Velocity-and-Vorticity-Fields">Generate a Sequence of Velocity and Vorticity Fields</a><a id="Generate-a-Sequence-of-Velocity-and-Vorticity-Fields-1"></a><a class="docs-heading-anchor-permalink" href="#Generate-a-Sequence-of-Velocity-and-Vorticity-Fields" title="Permalink"></a></h3><p>This step obtains the computed velocity and vorticity fields at a sequence of times, and stores them as a sequence of interpolatable fields. This will greatly speed up how we compute the flow properties (i.e. vorticity) along trajectories.</p><pre><code class="language-julia hljs">t_start = 0.0
+plt</code></pre><img src="440440c9.svg" alt="Example block output"/><h2 id="Compute-LAVD"><a class="docs-heading-anchor" href="#Compute-LAVD">Compute LAVD</a><a id="Compute-LAVD-1"></a><a class="docs-heading-anchor-permalink" href="#Compute-LAVD" title="Permalink"></a></h2><h3 id="Generate-a-Sequence-of-Velocity-and-Vorticity-Fields"><a class="docs-heading-anchor" href="#Generate-a-Sequence-of-Velocity-and-Vorticity-Fields">Generate a Sequence of Velocity and Vorticity Fields</a><a id="Generate-a-Sequence-of-Velocity-and-Vorticity-Fields-1"></a><a class="docs-heading-anchor-permalink" href="#Generate-a-Sequence-of-Velocity-and-Vorticity-Fields" title="Permalink"></a></h3><p>This step obtains the computed velocity and vorticity fields at a sequence of times, and stores them as a sequence of interpolatable fields. This will greatly speed up how we compute the flow properties (i.e. vorticity) along trajectories.</p><pre><code class="language-julia hljs">t_start = 0.0
 t_end = 8.5
 dt = timestep(u0,sys)
 tr = t_start:dt:t_end
@@ -97,17 +97,17 @@ x0, y0 = x_grid(lavd_cache), y_grid(lavd_cache)</code></pre><pre class="document
 t0 = 8.5
 t1 = t0 + T
 
-@time traj = compute_trajectory(velseq, (x0, y0), (t0, t1));</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">  4.716056 seconds (4.80 M allocations: 323.618 MiB, 98.47% compilation time)</code></pre><p>Compute LAVD</p><pre><code class="language-julia hljs">LAVD = similar(x0)
+@time traj = compute_trajectory(velseq, (x0, y0), (t0, t1));</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">  4.689631 seconds (4.79 M allocations: 322.453 MiB, 0.81% gc time, 98.47% compilation time)</code></pre><p>Compute LAVD</p><pre><code class="language-julia hljs">LAVD = similar(x0)
 compute_LAVD!(LAVD, traj, X_MIN, Y_MIN, X_MAX, Y_MAX, vortseq)
 plot(LAVD, lavd_cache, colorbar = true, levels = 20)
 plot!(surfaces(sol,sys,t0))
-#savefig(&quot;lavd&quot;)</code></pre><img src="ad4c66b0.svg" alt="Example block output"/><p>Compute IVD</p><pre><code class="language-julia hljs">IVD = similar(x0)
+#savefig(&quot;lavd&quot;)</code></pre><img src="70a0c7fb.svg" alt="Example block output"/><p>Compute IVD</p><pre><code class="language-julia hljs">IVD = similar(x0)
 compute_IVD!(IVD, traj, X_MIN, Y_MIN, X_MAX, Y_MAX, vortseq)
 plot(IVD, lavd_cache, colorbar = true, levels = 20)
 plot!(surfaces(sol,sys,t0))
-#savefig(&quot;ivd&quot;)</code></pre><img src="051be6b5.svg" alt="Example block output"/><p>Plot the vorticity fields</p><pre><code class="language-julia hljs">plot(vorticity(sol, sys, t0), sys, layers = false,clim = (-5,5),levels = range(-5,5,length=30), colorbar = true, xlim = (-0.5, 5.5))
+#savefig(&quot;ivd&quot;)</code></pre><img src="12aca439.svg" alt="Example block output"/><p>Plot the vorticity fields</p><pre><code class="language-julia hljs">plot(vorticity(sol, sys, t0), sys, layers = false,clim = (-5,5),levels = range(-5,5,length=30), colorbar = true, xlim = (-0.5, 5.5))
 plot!(surfaces(sol,sys,t0))
-#savefig(&quot;vorticity&quot;)</code></pre><img src="f24dce70.svg" alt="Example block output"/><p>Compute and plot the backward FTLE field</p><pre><code class="language-julia hljs">T = 8.5
+#savefig(&quot;vorticity&quot;)</code></pre><img src="054f1e1f.svg" alt="Example block output"/><p>Compute and plot the backward FTLE field</p><pre><code class="language-julia hljs">T = 8.5
 t0 = 8.5
 xb, yb = displacement_field(velseq,x0,y0,(t0,t0-T),alg=ILMPostProcessing.Euler())
 fFTLE = similar(x0)
@@ -115,4 +115,4 @@ compute_FTLE!(fFTLE,xb,yb,dx,dx,T);
 
 plot(fFTLE,ftle_cache, colorbar = true, levels = 100)
 plot!(surfaces(sol,sys,t0))
-#savefig(&quot;ftle&quot;)</code></pre><img src="03bc9e9c.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../ftle/">« Finite-Time Lyapunov Exponent (FTLE)</a><a class="docs-footer-nextpage" href="../functions/">Functions and types »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.12.0 on <span class="colophon-date" title="Wednesday 18 June 2025 02:29">Wednesday 18 June 2025</span>. Using Julia version 1.10.9.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+#savefig(&quot;ftle&quot;)</code></pre><img src="0ce1ea2f.svg" alt="Example block output"/><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../ftle/">« Finite-Time Lyapunov Exponent (FTLE)</a><a class="docs-footer-nextpage" href="../functions/">Functions and types »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.12.0 on <span class="colophon-date" title="Wednesday 18 June 2025 02:30">Wednesday 18 June 2025</span>. Using Julia version 1.10.9.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
