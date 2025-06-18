@@ -50,7 +50,7 @@ using LinearAlgebra
     ftle_cache = SurfaceScalarCache(ftlegrid)
     x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
     
-    traj = compute_trajectory(vseq,(x0,y0),(t_start,t_end),alg=Euler())
+    traj = compute_trajectory(vseq,(x0,y0),(t_start,t_end),alg=ILMPostProcessing.Euler())
 
     @test length(traj.xhistory[end]) == length(traj.yhistory[end]) == length(x0)
 
