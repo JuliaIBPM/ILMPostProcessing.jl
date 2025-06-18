@@ -87,7 +87,7 @@ X_MAX = 2.0
 Y_MIN = -2.0
 Y_MAX = 2.0
 dx = 0.01
-ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx,optimize=false)
+ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx)
 ftle_cache = SurfaceScalarCache(ftlegrid)
 x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
 ````
@@ -100,7 +100,7 @@ that we will compute both a forward and backward time FTLE field at `t0`, so
 we need to ensure we have velocity data available from `t0 - T` to `t0 + T`.
 
 For integration purposes we use the forward Euler method, but any time marching
-method can be used.
+method can be used, e.g., `ILMPostProcessing.RK4()`, etc.
 
 ````@example ftle
 T = 6.0
@@ -110,7 +110,7 @@ t0 = 6.0
 The forward displacement field and FTLE field
 
 ````@example ftle
-xf, yf = displacement_field(velseq,x0,y0,(t0,t0+T),alg=Euler())
+xf, yf = displacement_field(velseq,x0,y0,(t0,t0+T),alg=ILMPostProcessing.Euler())
 
 fFTLE = similar(x0)
 compute_FTLE!(fFTLE,xf,yf,dx,dx,T);
@@ -148,7 +148,7 @@ xp_max = 0.0
 yp_min = 0.5
 yp_max = 1.5
 dxp = 0.1
-p_grid = PhysicalGrid((xp_min,xp_max),(yp_min,yp_max),dxp,optimize=false)
+p_grid = PhysicalGrid((xp_min,xp_max),(yp_min,yp_max),dxp)
 p_cache = SurfaceScalarCache(p_grid);
 xp0, yp0 = x_grid(p_cache), y_grid(p_cache);
 

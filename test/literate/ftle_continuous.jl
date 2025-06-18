@@ -24,7 +24,7 @@ X_MIN, X_MAX = 0.0, 2.0
 Y_MIN, Y_MAX = 0.0, 1.0
 dx = 0.002
 
-ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx,optimize=false);
+ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx);
 ftle_cache = SurfaceScalarCache(ftlegrid)
 x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
 
@@ -105,7 +105,7 @@ X_MIN, X_MAX = -6.0, 50.0
 Y_MIN, Y_MAX = -2, 2
 dx = 0.08
 
-ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx,optimize=false);
+ftlegrid = PhysicalGrid((X_MIN,X_MAX),(Y_MIN,Y_MAX),dx);
 ftle_cache = SurfaceScalarCache(ftlegrid)
 x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
 

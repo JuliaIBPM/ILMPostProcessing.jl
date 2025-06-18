@@ -15,12 +15,12 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [compat]
 ColorTypes = "<0.10.1, 0.10, 0.11"
 Interpolations = "0.12.10, 0.13, 0.14, 0.15"
-LinearAlgebra = "1.7"
-OrdinaryDiffEq = "6.50 - 6.87"
+LinearAlgebra = "1.10"
+OrdinaryDiffEq = "6"
 RecipesBase = "1.0"
 RecursiveArrayTools = "2.2 - 2.38.5, 2.38.6, 3"
-Statistics = "1.7"
-julia = "1.7"
+Statistics = "1.10"
+julia = "1.10"
 
 [extras]
 ImmersedLayers = "cdc13194-334e-4e1c-bc8d-fc3a28509c85"
