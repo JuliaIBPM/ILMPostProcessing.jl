@@ -55,8 +55,8 @@ using LinearAlgebra
     T = 0.5
     t0 = 0.5
 
-    xf, yf = displacement_field(vseq,x0,y0,(t0,t0+T),alg=Euler())
-    xb, yb = displacement_field(vseq,x0,y0,(t0,t0-T),alg=Euler())
+    xf, yf = displacement_field(vseq,x0,y0,(t0,t0+T),alg=ILMPostProcessing.Euler())
+    xb, yb = displacement_field(vseq,x0,y0,(t0,t0-T),alg=ILMPostProcessing.Euler())
 
     #a = ILMPostProcessing.euler_forward(initial_conditions, u, v, t0, t_start, dt, T)
     #b = ILMPostProcessing.euler_backward(initial_conditions, u, v, t0, t_start, dt, T)

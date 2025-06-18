@@ -100,7 +100,7 @@ that we will compute both a forward and backward time FTLE field at `t0`, so
 we need to ensure we have velocity data available from `t0 - T` to `t0 + T`.
 
 For integration purposes we use the forward Euler method, but any time marching
-method can be used.
+method can be used, e.g., `ILMPostProcessing.RK4()`, etc.
 
 ````@example ftle
 T = 6.0
@@ -110,7 +110,7 @@ t0 = 6.0
 The forward displacement field and FTLE field
 
 ````@example ftle
-xf, yf = displacement_field(velseq,x0,y0,(t0,t0+T),alg=Euler())
+xf, yf = displacement_field(velseq,x0,y0,(t0,t0+T),alg=ILMPostProcessing.Euler())
 
 fFTLE = similar(x0)
 compute_FTLE!(fFTLE,xf,yf,dx,dx,T);

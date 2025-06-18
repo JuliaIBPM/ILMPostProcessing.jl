@@ -30,12 +30,12 @@ using LinearAlgebra
 
     pts = [ [0.5,1], [-0.5,-0.5], [0.25, -0.3]]
 
-    traj = compute_trajectory(velfcn...,pts,(0,1),alg=Tsit5())
+    traj = compute_trajectory(velfcn...,pts,(0,1),alg=ILMPostProcessing.Tsit5())
 
     @test length(traj.xhistory[end]) == length(traj.yhistory[end]) == length(pts)
    
     tsline = integrator.t
-    sline = compute_streamline(velfcn...,pts,(0,12),tsline,alg=Tsit5())
+    sline = compute_streamline(velfcn...,pts,(0,12),tsline,alg=ILMPostProcessing.Tsit5())
 
 
     t_start = 0.0
@@ -50,7 +50,7 @@ using LinearAlgebra
     ftle_cache = SurfaceScalarCache(ftlegrid)
     x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
     
-    traj = compute_trajectory(vseq,(x0,y0),(t_start,t_end),alg=Euler())
+    traj = compute_trajectory(vseq,(x0,y0),(t_start,t_end),alg=ILMPostProcessing.Euler())
 
     @test length(traj.xhistory[end]) == length(traj.yhistory[end]) == length(x0)
 
@@ -65,14 +65,14 @@ end
 
     pts = [ [0.5,1], [-0.5,-0.5], [0.25, -0.3]]
 
-    traj = compute_trajectory(ufcn,vfcn,pts,(0,1),alg=Tsit5())
+    traj = compute_trajectory(ufcn,vfcn,pts,(0,1),alg=ILMPostProcessing.Tsit5())
 
     @test typeof(traj.xhistory)<:Vector && typeof(traj.yhistory)<:Vector
 
     ufcn2(x,y,t) = 1
     vfcn2(x,y,t) = sin(t)
 
-    traj = compute_trajectory(ufcn2,vfcn2,pts,(0,1),alg=Tsit5())
+    traj = compute_trajectory(ufcn2,vfcn2,pts,(0,1),alg=ILMPostProcessing.Tsit5())
 
     @test typeof(traj.xhistory)<:Vector && typeof(traj.yhistory)<:Vector
 
@@ -81,7 +81,7 @@ end
 
 
     tsline = π
-    sline = compute_streamline(ufcn2,vfcn2,pts,(0,10),tsline,alg=Tsit5())
+    sline = compute_streamline(ufcn2,vfcn2,pts,(0,10),tsline,alg=ILMPostProcessing.Tsit5())
     x1, y1 = sline[2]
     @test norm(y1 .- pts[2][2]) < 1e-7
 

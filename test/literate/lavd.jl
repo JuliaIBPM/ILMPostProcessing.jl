@@ -232,7 +232,7 @@ Compute and plot the backward FTLE field
 
 T = 8.5
 t0 = 8.5
-xb, yb = displacement_field(velseq,x0,y0,(t0,t0-T),alg=Euler())
+xb, yb = displacement_field(velseq,x0,y0,(t0,t0-T),alg=ILMPostProcessing.Euler())
 fFTLE = similar(x0)
 compute_FTLE!(fFTLE,xb,yb,dx,dx,T);
 
