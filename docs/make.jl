@@ -14,6 +14,7 @@ makedocs(
                      "manual/dmdtest.md",
                      "manual/ftle_continuous.md",
                      "manual/ftle.md",
+                     "manual/lavd.md",
                      "manual/functions.md"
                      ]
         #"Internals" => [ "internals/properties.md"]

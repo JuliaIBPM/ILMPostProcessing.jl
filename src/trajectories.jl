@@ -189,7 +189,7 @@ for multiple tracer particles. The arguments
 or are functions. If they are functions, then each of them should be of the form `u(x,y,t)`
 and `v(x,y,t)`; `Trange` is a tuple of the initial and final time of integration (and the final time
 can be earlier than the initial time if backward trajectories are desired); and `dt` is the
-time step size, which defaults to 0.001. The output is the solution
+time step size, which defaults to 0.01. The output is the solution
 structure for the `OrdinaryDiffEq` package (or, for multiple particles, a vector
 of such solution structures).
 """

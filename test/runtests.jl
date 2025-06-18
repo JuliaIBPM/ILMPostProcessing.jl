@@ -38,6 +38,7 @@ if GROUP == "All" || GROUP == "Auxiliary"
     include("POD.jl")
     include("trajectories.jl")
     include("FTLE.jl")
+    include("LAVD.jl")
 end
 
 if GROUP == "All" || GROUP == "Literate"
@@ -56,7 +57,7 @@ end
 if GROUP == "Notebooks"
   for (root, dirs, files) in walkdir(litdir)
     for file in files
-      #endswith(file,".jl") && startswith(file,"ftle_cont") && Literate.notebook(joinpath(root, file),notebookdir)
+      #endswith(file,".jl") && startswith(file,"lavd") && Literate.notebook(joinpath(root, file),notebookdir)
       endswith(file,".jl") && Literate.notebook(joinpath(root, file),notebookdir)
     end
   end
