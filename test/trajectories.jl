@@ -46,7 +46,7 @@ using LinearAlgebra
     vseq = VectorFieldSequence(tr,velxy)
 
     dx = 0.1
-    ftlegrid = PhysicalGrid((-2,2),(-2,2),dx,optimize=false)
+    ftlegrid = PhysicalGrid((-2,2),(-2,2),dx)
     ftle_cache = SurfaceScalarCache(ftlegrid)
     x0, y0 = x_grid(ftle_cache), y_grid(ftle_cache)
     
